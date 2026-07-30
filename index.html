@@ -3852,6 +3852,51 @@
         document.addEventListener('DOMContentLoaded', () => {
             initRegisteredAccounts();
             checkAuthSession();
+
+            // Auto-load High-Resolution YouTube Placeholders to solve blurry thumbnails
+            const iframes = document.querySelectorAll('iframe[src*="youtube.com/embed/"]');
+            iframes.forEach((iframe) => {
+                // If it is inside the video modal, ignore it
+                if (iframe.id === 'modal-iframe-element') return;
+
+                const src = iframe.src;
+                const title = iframe.getAttribute('title') || 'YouTube Video';
+                const match = src.match(/\/embed\/([^/?]+)/);
+                if (!match) return;
+                const videoId = match[1];
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'w-full h-full cursor-pointer group relative';
+                
+                // Use YouTube's maxresdefault for crystal-clear thumbnail
+                const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                
+                wrapper.innerHTML = `
+                    <img src="${thumbnailUrl}" alt="${title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102" onerror="this.src='https://img.youtube.com/vi/${videoId}/hqdefault.jpg'" />
+                    <div class="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition-colors duration-300"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-16 h-16 md:w-18 md:h-18 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-red-600 group-hover:border-red-400 transition-all duration-300">
+                            <svg class="w-8 h-8 text-white fill-current ml-1" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </div>
+                    </div>
+                `;
+                
+                wrapper.addEventListener('click', () => {
+                    const autoplaySrc = src.includes('?') ? `${src}&autoplay=1` : `${src}?autoplay=1`;
+                    const activeIframe = document.createElement('iframe');
+                    activeIframe.className = 'w-full h-full rounded-2xl';
+                    activeIframe.src = autoplaySrc;
+                    activeIframe.title = title;
+                    activeIframe.frameBorder = '0';
+                    activeIframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+                    activeIframe.allowFullscreen = true;
+                    wrapper.parentNode.replaceChild(activeIframe, wrapper);
+                });
+                
+                iframe.parentNode.replaceChild(wrapper, iframe);
+            });
         });
     </script>
 
