@@ -3463,38 +3463,51 @@
         // =========================================================
         // FRONTEND-ONLY AUTHENTICATION & ADMIN ENGINE
         // =========================================================
-        const DEFAULT_ADMIN_ACCOUNT = {
-            name: 'Administrator',
-            email: 'admin@agivant.com',
-            password: 'Admin@123',
-            role: 'admin',
-            createdAt: 'System Default'
-        };
+        const DEFAULT_ACCOUNTS = [
+            {
+                name: 'Administrator',
+                email: 'admin@agivant.com',
+                password: 'Admin@123',
+                role: 'admin',
+                createdAt: 'System Default'
+            }
+        ];
 
-        // Initialize registered users in localStorage with Default Admin
+        // Generate 150 standard user accounts programmatically
+        for (let i = 1; i <= 150; i++) {
+            DEFAULT_ACCOUNTS.push({
+                name: `User ${i}`,
+                email: `user${i}@agivant.com`,
+                password: `User@123`,
+                role: 'user',
+                createdAt: 'System Default'
+            });
+        }
+
+        // Initialize registered users in localStorage with Default Accounts
         function initRegisteredAccounts() {
             const stored = localStorage.getItem('nos_registered_users');
             if (!stored) {
-                const initialUsers = [DEFAULT_ADMIN_ACCOUNT];
-                localStorage.setItem('nos_registered_users', JSON.stringify(initialUsers));
-                return initialUsers;
+                localStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
+                return DEFAULT_ACCOUNTS;
             }
             try {
                 const users = JSON.parse(stored);
-                // Ensure default admin exists and password matches DEFAULT_ADMIN_ACCOUNT
-                const adminIdx = users.findIndex(u => u.email.toLowerCase() === DEFAULT_ADMIN_ACCOUNT.email.toLowerCase());
-                if (adminIdx === -1) {
-                    users.unshift(DEFAULT_ADMIN_ACCOUNT);
-                } else {
-                    // Update admin password in case old localStorage holds outdated password
-                    users[adminIdx].password = DEFAULT_ADMIN_ACCOUNT.password;
-                    users[adminIdx].role = 'admin';
-                }
+                // Ensure all default accounts exist and are in sync
+                DEFAULT_ACCOUNTS.forEach(defaultAcc => {
+                    const idx = users.findIndex(u => u.email.toLowerCase() === defaultAcc.email.toLowerCase());
+                    if (idx === -1) {
+                        users.push(defaultAcc);
+                    } else {
+                        users[idx].password = defaultAcc.password;
+                        users[idx].role = defaultAcc.role;
+                    }
+                });
                 localStorage.setItem('nos_registered_users', JSON.stringify(users));
                 return users;
             } catch (e) {
-                localStorage.setItem('nos_registered_users', JSON.stringify([DEFAULT_ADMIN_ACCOUNT]));
-                return [DEFAULT_ADMIN_ACCOUNT];
+                localStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
+                return DEFAULT_ACCOUNTS;
             }
         }
 
