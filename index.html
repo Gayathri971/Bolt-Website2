@@ -186,13 +186,6 @@
                     class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black rounded-xl shadow-lg shadow-indigo-600/30 text-sm transition-all cursor-pointer mt-2">
                     Sign In to Account
                 </button>
-
-                <div class="text-center pt-2">
-                    <button type="button" onclick="openResetAdminModal()"
-                        class="text-xs text-indigo-400 hover:text-indigo-300 font-bold transition-all hover:underline cursor-pointer">
-                        Reset Admin Password
-                    </button>
-                </div>
             </form>
         </div>
     </div>
@@ -4066,23 +4059,6 @@
                 </button>
             </div>
 
-            <!-- Quick Demo Credentials Helper Buttons -->
-            <div class="space-y-2">
-                <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 block">Quick Static Demo
-                    Login</span>
-                <div class="grid grid-cols-2 gap-2.5">
-                    <button onclick="executeQuickLogin('admin@agivant.com', 'admin123')"
-                        class="p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-2xl text-left transition-all group cursor-pointer">
-                        <span class="text-xs font-black text-purple-700 block">👑 Admin Login</span>
-                        <span class="text-[10px] text-purple-600 font-mono block">admin@agivant.com</span>
-                    </button>
-                    <button onclick="executeQuickLogin('user@agivant.com', 'user123')"
-                        class="p-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 rounded-2xl text-left transition-all group cursor-pointer">
-                        <span class="text-xs font-black text-indigo-700 block">👤 Standard User</span>
-                        <span class="text-[10px] text-indigo-600 font-mono block">user@agivant.com</span>
-                    </button>
-                </div>
-            </div>
 
             <!-- Login Form -->
             <form onsubmit="submitFormLogin(event)" class="space-y-4 pt-2">
