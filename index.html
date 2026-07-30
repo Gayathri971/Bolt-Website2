@@ -171,8 +171,8 @@
                 </div>
 
                 <div class="space-y-1.5">
-                    <label class="text-xs font-extrabold text-slate-300 uppercase tracking-wide">Email Address</label>
-                    <input id="gatekeeper-email" type="email" required placeholder="email@company.com"
+                    <label class="text-xs font-extrabold text-slate-300 uppercase tracking-wide">Username</label>
+                    <input id="gatekeeper-username" type="text" required placeholder="Username"
                         class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:bg-slate-800 focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all" />
                 </div>
 
@@ -3457,18 +3457,19 @@
         // FRONTEND-ONLY AUTHENTICATION & ADMIN ENGINE
         // =========================================================
         // =========================================================
+        // =========================================================
         // EDIT YOUR COMPANY EMPLOYEES HERE (Option B)
-        // Add your employees' names, emails, and passwords below:
+        // Add your employees' names, usernames, and passwords below:
         // =========================================================
         const COMPANY_EMPLOYEES = [
             // Add your company employees here following the format:
-            // { name: "Employee Name", email: "employee@agivant.com", password: "Password@123", role: "user" }
+            // { name: "Employee Name", username: "employee1", password: "Password@123", role: "user" }
         ];
 
         const DEFAULT_ACCOUNTS = [
             {
                 name: 'Administrator',
-                email: 'admin@agivant.com',
+                username: 'admin',
                 password: 'Admin@123',
                 role: 'admin',
                 createdAt: 'System Default'
@@ -3479,7 +3480,7 @@
         COMPANY_EMPLOYEES.forEach(emp => {
             DEFAULT_ACCOUNTS.push({
                 name: emp.name,
-                email: emp.email.trim().toLowerCase(),
+                username: emp.username.trim().toLowerCase(),
                 password: emp.password,
                 role: emp.role || 'user',
                 createdAt: 'System Default'
@@ -3494,13 +3495,24 @@
                 return DEFAULT_ACCOUNTS;
             }
             try {
-                let users = JSON.parse(stored);
-                // Clean up any old programmatic "user1" to "user150" accounts and temporary employee templates
-                users = users.filter(u => !/^user\d+@agivant\.com$/i.test(u.email));
-                users = users.filter(u => u.email.toLowerCase() !== 'gayathri@agivant.com' && u.email.toLowerCase() !== 'employee1@agivant.com');
+                let users = JSON.parse(stored) || [];
+                
+                // Migrate schema from email to username if old data exists
+                const hasOldSchema = users.some(u => u.email !== undefined);
+                if (hasOldSchema) {
+                    localStorage.removeItem('nos_registered_users');
+                    localStorage.removeItem('nos_active_user');
+                    localStorage.removeItem('nos_login_history');
+                    localStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
+                    return DEFAULT_ACCOUNTS;
+                }
+
+                // Clean up any old programmatic accounts or email templates
+                users = users.filter(u => u.username && !/^user\d+$/i.test(u.username) && !u.username.includes('@'));
+                
                 // Ensure all default accounts exist and are in sync
                 DEFAULT_ACCOUNTS.forEach(defaultAcc => {
-                    const idx = users.findIndex(u => u.email.toLowerCase() === defaultAcc.email.toLowerCase());
+                    const idx = users.findIndex(u => u.username.toLowerCase() === defaultAcc.username.toLowerCase());
                     if (idx === -1) {
                         users.push(defaultAcc);
                     } else {
@@ -3535,7 +3547,7 @@
             }
         }
 
-        // Record User Login Event (User Name, Email, Login Date, Login Time)
+        // Record User Login Event (User Name, Username, Login Date, Login Time)
         function recordLoginEvent(user) {
             const history = getLoginHistory();
             const now = new Date();
@@ -3548,8 +3560,8 @@
             });
 
             const loginRecord = {
-                name: user.name || user.email.split('@')[0],
-                email: user.email,
+                name: user.name || user.username,
+                username: user.username,
                 loginDate: loginDate,
                 loginTime: loginTime,
                 timestamp: now.getTime()
@@ -3589,23 +3601,24 @@
         }
 
         function fillAdminDemoCredentials() {
-            document.getElementById('gatekeeper-email').value = 'admin@agivant.com';
+            const usernameInput = document.getElementById('gatekeeper-username');
+            if (usernameInput) usernameInput.value = 'admin';
             document.getElementById('gatekeeper-password').value = 'Admin@123';
         }
 
         function handleGatekeeperLogin(e) {
             if (e) e.preventDefault();
-            const emailInput = document.getElementById('gatekeeper-email').value.trim().toLowerCase();
+            const usernameInput = document.getElementById('gatekeeper-username').value.trim().toLowerCase();
             const passwordInput = document.getElementById('gatekeeper-password').value.trim();
             const errorBox = document.getElementById('gatekeeper-error-msg');
 
             const accounts = getRegisteredAccounts();
             const matchedUser = accounts.find(u => {
-                const sameEmail = u.email.toLowerCase() === emailInput;
-                if (!sameEmail) return false;
+                const sameUsername = u.username.toLowerCase() === usernameInput;
+                if (!sameUsername) return false;
                 if (u.password === passwordInput) return true;
                 // Flexible fallback for admin password variants
-                if (emailInput === 'admin@agivant.com' && (passwordInput === 'Admin@123' || passwordInput === 'admin123')) {
+                if (usernameInput === 'admin' && (passwordInput === 'Admin@123' || passwordInput === 'admin123')) {
                     return true;
                 }
                 return false;
@@ -3618,7 +3631,7 @@
                 checkAuthSession();
             } else {
                 if (errorBox) {
-                    errorBox.innerText = 'Invalid email address or password. Please check your credentials.';
+                    errorBox.innerText = 'Invalid username or password. Please check your credentials.';
                     errorBox.classList.remove('hidden');
                 }
             }
@@ -3636,12 +3649,12 @@
             const adminBtn = document.getElementById('header-admin-btn');
 
             if (avatarElem) {
-                avatarElem.innerText = (user.name || user.email).substring(0, 2).toUpperCase();
+                avatarElem.innerText = (user.name || user.username).substring(0, 2).toUpperCase();
                 avatarElem.className = user.role === 'admin'
                     ? 'w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-md border border-purple-300'
                     : 'w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-black text-sm flex items-center justify-center shadow-md border border-indigo-200';
             }
-            if (emailElem) emailElem.innerText = user.email;
+            if (emailElem) emailElem.innerText = user.username;
             if (roleElem) {
                 if (user.role === 'admin') {
                     roleElem.innerText = 'Administrator';
@@ -3707,24 +3720,24 @@
         function handleAdminCreateUser(e) {
             e.preventDefault();
             const name = document.getElementById('admin-new-name').value.trim();
-            const email = document.getElementById('admin-new-email').value.trim().toLowerCase();
+            const username = document.getElementById('admin-new-username').value.trim().toLowerCase();
             const password = document.getElementById('admin-new-password').value.trim();
             const alertBox = document.getElementById('admin-create-alert');
 
-            if (!name || !email || !password) {
-                alertBox.innerHTML = `<div class="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold">User Name, User Email, and Default Password are required.</div>`;
+            if (!name || !username || !password) {
+                alertBox.innerHTML = `<div class="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold">User Name, Username, and Default Password are required.</div>`;
                 return;
             }
 
             const accounts = getRegisteredAccounts();
-            if (accounts.some(u => u.email.toLowerCase() === email)) {
-                alertBox.innerHTML = `<div class="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold">Account with email "${email}" already exists.</div>`;
+            if (accounts.some(u => u.username.toLowerCase() === username)) {
+                alertBox.innerHTML = `<div class="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold">Account with username "${username}" already exists.</div>`;
                 return;
             }
 
             const newUser = {
                 name: name,
-                email: email,
+                username: username,
                 password: password,
                 role: 'user',
                 createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -3733,26 +3746,26 @@
             accounts.push(newUser);
             saveRegisteredAccounts(accounts);
 
-            alertBox.innerHTML = `<div class="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold">✓ User "${name}" (${email}) created successfully with default password "${password}". They can now log in.</div>`;
+            alertBox.innerHTML = `<div class="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold">✓ User "${name}" (${username}) created successfully with default password "${password}". They can now log in.</div>`;
 
             document.getElementById('admin-new-name').value = '';
-            document.getElementById('admin-new-email').value = '';
+            document.getElementById('admin-new-username').value = '';
             document.getElementById('admin-new-password').value = '';
 
             renderAdminDashboardData();
         }
 
-        function deleteCustomUser(emailToDelete) {
-            if (confirm(`Are you sure you want to remove user "${emailToDelete}"?`)) {
+        function deleteCustomUser(usernameToDelete) {
+            if (confirm(`Are you sure you want to remove user "${usernameToDelete}"?`)) {
                 let accounts = getRegisteredAccounts();
-                accounts = accounts.filter(u => u.email.toLowerCase() !== emailToDelete.toLowerCase());
+                accounts = accounts.filter(u => u.username.toLowerCase() !== usernameToDelete.toLowerCase());
                 saveRegisteredAccounts(accounts);
                 renderAdminDashboardData();
             }
         }
 
-        function resetUserPassword(emailToReset) {
-            const newPassword = prompt(`Enter new password for user "${emailToReset}":`);
+        function resetUserPassword(usernameToReset) {
+            const newPassword = prompt(`Enter new password for user "${usernameToReset}":`);
             if (newPassword === null) return; // Admin cancelled
             const trimmedPassword = newPassword.trim();
             if (!trimmedPassword) {
@@ -3761,19 +3774,19 @@
             }
 
             let accounts = getRegisteredAccounts();
-            const idx = accounts.findIndex(u => u.email.toLowerCase() === emailToReset.toLowerCase());
+            const idx = accounts.findIndex(u => u.username.toLowerCase() === usernameToReset.toLowerCase());
             if (idx !== -1) {
                 accounts[idx].password = trimmedPassword;
                 saveRegisteredAccounts(accounts);
                 renderAdminDashboardData();
-                alert(`✓ Password for "${emailToReset}" has been successfully updated to "${trimmedPassword}".`);
+                alert(`✓ Password for "${usernameToReset}" has been successfully updated to "${trimmedPassword}".`);
             } else {
                 alert("User not found.");
             }
         }
 
         function renderAdminDashboardData() {
-            // Render Login History Dashboard Table (User Name | Email | Login Date | Login Time)
+            // Render Login History Dashboard Table (User Name | Username | Login Date | Login Time)
             const history = getLoginHistory();
             const historyContainer = document.getElementById('admin-logs-tbody');
             if (historyContainer) {
@@ -3785,8 +3798,8 @@
                             <td class="py-3.5 px-4 font-bold text-slate-900">${log.name}</td>
                             <td class="py-3.5 px-4 text-slate-700">
                                 <div class="flex items-center space-x-2">
-                                    <span class="w-2.5 h-2.5 rounded-full ${log.email === 'admin@agivant.com' ? 'bg-purple-600 shadow-[0_0_8px_#9333ea]' : 'bg-indigo-500'}"></span>
-                                    <span>${log.email}</span>
+                                    <span class="w-2.5 h-2.5 rounded-full ${log.username === 'admin' ? 'bg-purple-600 shadow-[0_0_8px_#9333ea]' : 'bg-indigo-500'}"></span>
+                                    <span>${log.username}</span>
                                 </div>
                             </td>
                             <td class="py-3.5 px-4 font-semibold text-slate-600">${log.loginDate}</td>
@@ -3802,8 +3815,8 @@
             if (usersContainer) {
                 usersContainer.innerHTML = accounts.map(u => `
                     <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs md:text-sm">
-                        <td class="py-3 px-4 font-bold text-slate-900">${u.name || u.email.split('@')[0]}</td>
-                        <td class="py-3 px-4 font-bold text-slate-700">${u.email}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">${u.name || u.username}</td>
+                        <td class="py-3 px-4 font-bold text-slate-700">${u.username}</td>
                         <td class="py-3 px-4 font-mono text-slate-600 bg-slate-50/80 rounded px-2 py-0.5 inline-block my-1">${u.password}</td>
                         <td class="py-3 px-4">
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}">
@@ -3812,10 +3825,10 @@
                         </td>
                         <td class="py-3 px-4 text-right">
                             <div class="flex items-center justify-end space-x-2">
-                                <button onclick="resetUserPassword('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
-                                ${u.email === 'admin@agivant.com'
+                                <button onclick="resetUserPassword('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
+                                ${u.username === 'admin'
                         ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
-                        : `<button onclick="deleteCustomUser('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
+                        : `<button onclick="deleteCustomUser('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
                     }
                             </div>
                         </td>
@@ -4045,8 +4058,8 @@
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Email Address</label>
-                    <input id="auth-login-email" type="email" required placeholder="name@agivant.com"
+                    <label class="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Username</label>
+                    <input id="auth-login-username" type="text" required placeholder="Username"
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-600 focus:outline-none text-sm font-medium transition-all" />
                 </div>
 
@@ -4119,7 +4132,7 @@
                     <div class="bg-purple-50/50 border border-purple-100 rounded-2xl p-6 space-y-4">
                         <div class="space-y-1">
                             <h4 class="text-lg font-extrabold text-slate-900">Create New User Account</h4>
-                            <p class="text-xs text-slate-600 font-medium">Add a new user with their email address and
+                            <p class="text-xs text-slate-600 font-medium">Add a new user with their username and
                                 default password. Newly created users can immediately sign in.</p>
                         </div>
 
@@ -4128,9 +4141,8 @@
                         <form onsubmit="handleAdminCreateUser(event)"
                             class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                             <div class="space-y-1">
-                                <label class="text-xs font-extrabold text-slate-700 uppercase tracking-wide">User Email
-                                    Address *</label>
-                                <input id="admin-new-email" type="email" required placeholder="newuser@agivant.com"
+                                <label class="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Username *</label>
+                                <input id="admin-new-username" type="text" required placeholder="Username"
                                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-sm font-medium" />
                             </div>
                             <div class="space-y-1">
