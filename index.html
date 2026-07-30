@@ -3462,6 +3462,9 @@
         // Add your employees' names, usernames, and passwords below:
         // =========================================================
         const COMPANY_EMPLOYEES = [
+            { name: "SaiCharan Ghanta", username: "SaiCharan.G", password: "SaiCha@agivant", role: "user" },
+            { name: "Naveen Athuluri", username: "Naveen.A", password: "NavAth@agivant", role: "user" },
+            { name: "Atishay Jain", username: "Atishay.J", password: "AtiJai@agivant", role: "user" }
             // Add your company employees here following the format:
             // { name: "Employee Name", username: "employee1", password: "Password@123", role: "user" }
         ];
@@ -3496,7 +3499,7 @@
             }
             try {
                 let users = JSON.parse(stored) || [];
-                
+
                 // Migrate schema from email to username if old data exists
                 const hasOldSchema = users.some(u => u.email !== undefined);
                 if (hasOldSchema) {
@@ -3509,7 +3512,7 @@
 
                 // Clean up any old programmatic accounts or email templates
                 users = users.filter(u => u.username && !/^user\d+$/i.test(u.username) && !u.username.includes('@'));
-                
+
                 // Ensure all default accounts exist and are in sync
                 DEFAULT_ACCOUNTS.forEach(defaultAcc => {
                     const idx = users.findIndex(u => u.username.toLowerCase() === defaultAcc.username.toLowerCase());
@@ -3823,6 +3826,7 @@
                                 ${u.role}
                             </span>
                         </td>
+                        <td class="py-3 px-4 font-semibold text-slate-600">${u.createdAt || 'System Default'}</td>
                         <td class="py-3 px-4 text-right">
                             <div class="flex items-center justify-end space-x-2">
                                 <button onclick="resetUserPassword('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
@@ -4141,7 +4145,8 @@
                         <form onsubmit="handleAdminCreateUser(event)"
                             class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                             <div class="space-y-1">
-                                <label class="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Username *</label>
+                                <label class="text-xs font-extrabold text-slate-700 uppercase tracking-wide">Username
+                                    *</label>
                                 <input id="admin-new-username" type="text" required placeholder="Username"
                                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-sm font-medium" />
                             </div>
@@ -4207,10 +4212,11 @@
                             <thead>
                                 <tr
                                     class="bg-slate-50 text-slate-600 font-extrabold text-xs uppercase tracking-wider border-b border-slate-200">
-                                    <th class="py-3 px-4">Account Email</th>
+                                    <th class="py-3 px-4">Full Name</th>
+                                    <th class="py-3 px-4">Username</th>
                                     <th class="py-3 px-4">Password</th>
                                     <th class="py-3 px-4">Role</th>
-                                    <th class="py-3 px-4">Created Date</th>
+                                    <th class="py-3 px-4">Created At</th>
                                     <th class="py-3 px-4 text-right">Actions</th>
                                 </tr>
                             </thead>
