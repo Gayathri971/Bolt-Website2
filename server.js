@@ -21,7 +21,7 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-    let filePath = path.join(ROOT, req.url === '/' ? 'index2.html' : decodeURIComponent(req.url));
+    let filePath = path.join(ROOT, req.url === '/' ? 'index.html' : decodeURIComponent(req.url));
     let extname = String(path.extname(filePath)).toLowerCase();
     let contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
@@ -45,7 +45,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-    const url = `http://localhost:${PORT}/index2.html`;
+    const url = `http://localhost:${PORT}/index.html`;
     console.log(`==================================================`);
     console.log(`  🚀 BOLT Localhost Server Running!`);
     console.log(`  🌐 URL: ${url}`);

@@ -13,11 +13,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     print(f"==================================================")
     print(f"  🚀 BOLT Localhost Server Running!")
-    print(f"  🌐 URL: http://localhost:{PORT}/index2.html")
+    print(f"  🌐 URL: http://localhost:{PORT}/index.html")
     print(f"==================================================")
     
     # Automatically open in browser
-    webbrowser.open(f"http://localhost:{PORT}/index2.html")
+    webbrowser.open(f"http://localhost:{PORT}/index.html")
     
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         try:

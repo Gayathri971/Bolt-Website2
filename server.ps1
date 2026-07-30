@@ -8,10 +8,10 @@ try {
     $listener.Start()
     Write-Host "==================================================" -ForegroundColor Green
     Write-Host "  🚀 BOLT Localhost Server Running!" -ForegroundColor Green
-    Write-Host "  🌐 URL: http://localhost:$port/index2.html" -ForegroundColor Cyan
+    Write-Host "  🌐 URL: http://localhost:$port/index.html" -ForegroundColor Cyan
     Write-Host "==================================================" -ForegroundColor Green
 
-    Start-Process "http://localhost:$port/index2.html"
+    Start-Process "http://localhost:$port/index.html"
 
     while ($listener.IsListening) {
         $context = $listener.GetContext()
@@ -19,7 +19,7 @@ try {
         $response = $context.Response
 
         $relativePath = $request.Url.LocalPath.TrimStart('/')
-        if ([string]::IsNullOrWhiteSpace($relativePath)) { $relativePath = "index2.html" }
+        if ([string]::IsNullOrWhiteSpace($relativePath)) { $relativePath = "index.html" }
 
         $localPath = Join-Path $PSScriptRoot $relativePath
 
