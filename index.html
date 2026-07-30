@@ -3461,20 +3461,8 @@
         // Add your employees' names, emails, and passwords below:
         // =========================================================
         const COMPANY_EMPLOYEES = [
-            {
-                name: "Gayathri Ayyaluri",
-                email: "gayathri@agivant.com",
-                password: "Password@123",
-                role: "user"
-            },
-            {
-                name: "Employee Name 1",
-                email: "employee1@agivant.com",
-                password: "Password@123",
-                role: "user"
-            }
-            // Add more employees here following the same format:
-            // { name: "Name", email: "email@company.com", password: "password", role: "user" }
+            // Add your company employees here following the format:
+            // { name: "Employee Name", email: "employee@agivant.com", password: "Password@123", role: "user" }
         ];
 
         const DEFAULT_ACCOUNTS = [
@@ -3507,8 +3495,9 @@
             }
             try {
                 let users = JSON.parse(stored);
-                // Clean up any old programmatic "user1" to "user150" accounts
+                // Clean up any old programmatic "user1" to "user150" accounts and temporary employee templates
                 users = users.filter(u => !/^user\d+@agivant\.com$/i.test(u.email));
+                users = users.filter(u => u.email.toLowerCase() !== 'gayathri@agivant.com' && u.email.toLowerCase() !== 'employee1@agivant.com');
                 // Ensure all default accounts exist and are in sync
                 DEFAULT_ACCOUNTS.forEach(defaultAcc => {
                     const idx = users.findIndex(u => u.email.toLowerCase() === defaultAcc.email.toLowerCase());
