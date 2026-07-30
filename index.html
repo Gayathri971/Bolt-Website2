@@ -3461,17 +3461,17 @@
         // Add your employees' names, emails, and passwords below:
         // =========================================================
         const COMPANY_EMPLOYEES = [
-            { 
-                name: "Gayathri Ayyaluri", 
-                email: "gayathri@agivant.com", 
-                password: "Password@123", 
-                role: "user" 
+            {
+                name: "Gayathri Ayyaluri",
+                email: "gayathri@agivant.com",
+                password: "Password@123",
+                role: "user"
             },
-            { 
-                name: "Employee Name 1", 
-                email: "employee1@agivant.com", 
-                password: "Password@123", 
-                role: "user" 
+            {
+                name: "Employee Name 1",
+                email: "employee1@agivant.com",
+                password: "Password@123",
+                role: "user"
             }
             // Add more employees here following the same format:
             // { name: "Name", email: "email@company.com", password: "password", role: "user" }
@@ -3498,17 +3498,6 @@
             });
         });
 
-        // Generate 150 standard user accounts programmatically
-        for (let i = 1; i <= 150; i++) {
-            DEFAULT_ACCOUNTS.push({
-                name: `User ${i}`,
-                email: `user${i}@agivant.com`,
-                password: `User@123`,
-                role: 'user',
-                createdAt: 'System Default'
-            });
-        }
-
         // Initialize registered users in localStorage with Default Accounts
         function initRegisteredAccounts() {
             const stored = localStorage.getItem('nos_registered_users');
@@ -3517,7 +3506,9 @@
                 return DEFAULT_ACCOUNTS;
             }
             try {
-                const users = JSON.parse(stored);
+                let users = JSON.parse(stored);
+                // Clean up any old programmatic "user1" to "user150" accounts
+                users = users.filter(u => !/^user\d+@agivant\.com$/i.test(u.email));
                 // Ensure all default accounts exist and are in sync
                 DEFAULT_ACCOUNTS.forEach(defaultAcc => {
                     const idx = users.findIndex(u => u.email.toLowerCase() === defaultAcc.email.toLowerCase());
@@ -3779,7 +3770,7 @@
                 alert("Password cannot be empty.");
                 return;
             }
-            
+
             let accounts = getRegisteredAccounts();
             const idx = accounts.findIndex(u => u.email.toLowerCase() === emailToReset.toLowerCase());
             if (idx !== -1) {
@@ -3834,9 +3825,9 @@
                             <div class="flex items-center justify-end space-x-2">
                                 <button onclick="resetUserPassword('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
                                 ${u.email === 'admin@agivant.com'
-                                    ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
-                                    : `<button onclick="deleteCustomUser('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
-                                }
+                        ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
+                        : `<button onclick="deleteCustomUser('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
+                    }
                             </div>
                         </td>
                     </tr>
