@@ -3524,7 +3524,7 @@
                     if (idx === -1) {
                         users.push(defaultAcc);
                     } else {
-                        users[idx].password = defaultAcc.password;
+                        // Keep roles in sync, but do NOT overwrite passwords if they already exist
                         users[idx].role = defaultAcc.role;
                     }
                 });
@@ -3831,15 +3831,13 @@
                             </span>
                         </td>
                         <td class="py-3 px-4 text-right">
-                            ${u.email === 'admin@agivant.com'
-                                ? '<span class="text-xs text-slate-400 font-bold">System Default</span>'
-                                : `
-                                    <div class="flex items-center justify-end space-x-2">
-                                        <button onclick="resetUserPassword('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
-                                        <button onclick="deleteCustomUser('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>
-                                    </div>
-                                `
-                            }
+                            <div class="flex items-center justify-end space-x-2">
+                                <button onclick="resetUserPassword('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
+                                ${u.email === 'admin@agivant.com'
+                                    ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
+                                    : `<button onclick="deleteCustomUser('${u.email}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
+                                }
+                            </div>
                         </td>
                     </tr>
                 `).join('');
