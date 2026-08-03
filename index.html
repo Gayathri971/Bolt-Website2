@@ -3506,6 +3506,76 @@
             }
         };
 
+        // Helper function to resolve tool official favicon/logo URLs
+        function getToolLogoURL(toolName) {
+            const domainMap = {
+                'Glean': 'glean.com',
+                'Perplexity': 'perplexity.ai',
+                'Gemini Deep Research': 'google.com',
+                'Gemini': 'google.com',
+                'Gemini Enterprise': 'google.com',
+                'Gemini Canvas': 'google.com',
+                'Gemini CLI': 'google.com',
+                'Google Sheets AI': 'google.com',
+                'Google Vids': 'google.com',
+                'Eraser AI': 'eraser.io',
+                'Mermaid AI': 'mermaid.live',
+                'Structurizr': 'structurizr.com',
+                'IcePanel': 'icepanel.io',
+                'CrewAI': 'crewai.com',
+                'LangGraph': 'langchain.com',
+                'AutoGen': 'microsoft.com',
+                'Dify': 'dify.ai',
+                'ArchUnit': 'archunit.org',
+                'SonarQube AI': 'sonarqube.org',
+                'Snyk AI': 'snyk.io',
+                'Swimm': 'swimm.io',
+                'Notion AI': 'notion.so',
+                'Linear AI': 'linear.app',
+                'Jira Product Discovery AI': 'atlassian.com',
+                'Jira AI': 'atlassian.com',
+                'Atlassian Intelligence': 'atlassian.com',
+                'Cursor': 'cursor.com',
+                'Cursor Enterprise': 'cursor.com',
+                'GitHub Copilot Workspace': 'github.com',
+                'GitHub Copilot Code Review': 'github.com',
+                'GitHub Copilot': 'github.com',
+                'GitHub MCP': 'github.com',
+                'Sourcegraph Cody': 'sourcegraph.com',
+                'Claude Code': 'anthropic.com',
+                'Devin': 'cognition.ai',
+                'Codex': 'openai.com',
+                'Aider': 'aider.chat',
+                'CodeRabbit': 'coderabbit.ai',
+                'Qase AI': 'qase.io',
+                'Qase AIDEN': 'qase.io',
+                'TestRail AI': 'testrail.com',
+                'PractiTest AI': 'practitest.com',
+                'PractiTest SmartFox': 'practitest.com',
+                'Testim': 'testim.io',
+                'Functionize': 'functionize.com',
+                'Mabl': 'mabl.com',
+                'Antigravity': 'deepmind.google',
+                'CodiumAI': 'codium.ai',
+                'Semgrep AI': 'semgrep.dev',
+                'Launchable': 'launchableinc.com',
+                'Rootly AI': 'rootly.com',
+                'FireHydrant AI': 'firehydrant.com',
+                'PagerDuty Copilot': 'pagerduty.com',
+                'Datadog Bits AI': 'datadoghq.com',
+                'New Relic AI': 'newrelic.com',
+                'Dynatrace Davis AI': 'dynatrace.com',
+                'Draw.io': 'draw.io',
+                'Postman AI': 'postman.com',
+                'Postman MCP': 'postman.com',
+                'Tricentis Tosca AI': 'tricentis.com',
+                'Microsoft Playwright MCP': 'playwright.dev'
+            };
+
+            const domain = domainMap[toolName] || 'google.com';
+            return `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
+        }
+
         // Drawer Controller with Dynamic Content Mapping
         function openDrawer(domain, lifecycle) {
             const dataSet = loadedMatrixData[domain] ? loadedMatrixData[domain][lifecycle] : null;
@@ -3541,8 +3611,8 @@
 
                 solutionCard.innerHTML = `
                     <div class="flex items-start space-x-4">
-                        <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center font-bold text-slate-800 text-[18px] shadow-sm shrink-0">
-                            ${tool.substring(0, 2).toUpperCase()}
+                        <div class="w-12 h-12 rounded-xl bg-white border border-slate-150 flex items-center justify-center shadow-sm shrink-0 overflow-hidden p-2">
+                            <img src="${getToolLogoURL(tool)}" alt="${tool} logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='https://www.google.com/s2/favicons?sz=64&domain=google.com';" />
                         </div>
                         <div class="space-y-1.5">
                             <div class="flex flex-wrap items-center gap-2">
