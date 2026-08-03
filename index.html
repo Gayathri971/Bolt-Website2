@@ -820,7 +820,7 @@
                             </div>
                             <!-- 3D Box Graphic -->
                             <div class="w-2/5 flex items-center justify-end relative pointer-events-none">
-                                <img src="images/build-clean.png" alt="Build Environment Toolbox"
+                                <img src="images/build-transparent.png" alt="Build Environment Toolbox"
                                     class="w-full max-h-[170px] md:max-h-[190px] object-contain mix-blend-multiply transform scale-110 translate-x-2 transition-transform duration-300 group-hover:scale-115" />
                             </div>
                         </div>
@@ -857,7 +857,7 @@
                             </div>
                             <!-- 3D Path Graphic -->
                             <div class="w-2/5 flex items-center justify-end relative pointer-events-none">
-                                <img src="images/start-clean.png" alt="Start Here Journey"
+                                <img src="images/start-transparent.png" alt="Start Here Journey"
                                     class="w-full max-h-[170px] md:max-h-[190px] object-contain mix-blend-multiply transform scale-110 translate-x-2 transition-transform duration-300 group-hover:scale-115" />
                             </div>
                         </div>
@@ -3508,32 +3508,6 @@
 
         // Helper function to resolve tool official favicon/logo URLs
         function getToolLogoURL(toolName) {
-            // High-resolution premium CDN brand asset overrides
-            if (toolName === 'Antigravity') {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/google-deepmind.png';
-            }
-            if (toolName === 'LangGraph') {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/langgraph.png';
-            }
-            if (toolName === 'Swimm') {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/swimm.png';
-            }
-            if (toolName === 'Claude Code' || toolName === 'Claude') {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/claude.png';
-            }
-            if (toolName === 'Cursor' || toolName === 'Cursor Enterprise') {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/cursor.png';
-            }
-            if (toolName === 'Devin') {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/devin.png';
-            }
-            if (toolName === 'CodeRabbit') {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/coderabbit.png';
-            }
-            if (toolName.includes('Copilot')) {
-                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/github-copilot.png';
-            }
-
             const domainMap = {
                 'Glean': 'glean.com',
                 'Perplexity': 'perplexity.ai',
