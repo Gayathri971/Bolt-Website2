@@ -3508,6 +3508,32 @@
 
         // Helper function to resolve tool official favicon/logo URLs
         function getToolLogoURL(toolName) {
+            // High-resolution premium CDN brand asset overrides
+            if (toolName === 'Antigravity') {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/google-deepmind.png';
+            }
+            if (toolName === 'LangGraph') {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/langgraph.png';
+            }
+            if (toolName === 'Swimm') {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/swimm.png';
+            }
+            if (toolName === 'Claude Code' || toolName === 'Claude') {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/claude.png';
+            }
+            if (toolName === 'Cursor' || toolName === 'Cursor Enterprise') {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/cursor.png';
+            }
+            if (toolName === 'Devin') {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/devin.png';
+            }
+            if (toolName === 'CodeRabbit') {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/coderabbit.png';
+            }
+            if (toolName.includes('Copilot')) {
+                return 'https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/assets/github-copilot.png';
+            }
+
             const domainMap = {
                 'Glean': 'glean.com',
                 'Perplexity': 'perplexity.ai',
