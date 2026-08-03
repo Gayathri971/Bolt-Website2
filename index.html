@@ -3266,6 +3266,246 @@
             });
         }
 
+        // Comprehensive registry of tool-specific descriptions and recommended reasons
+        const TOOL_DETAILS = {
+            'Glean': {
+                desc: 'Connects and searches across all your company apps, databases, and chats to instantly find internal lifecycle data.',
+                why: 'Provides unified search to find past architectural designs and business requirements instantly.'
+            },
+            'Perplexity': {
+                desc: 'An AI-powered search engine that gathers web references to answer complex technical queries with cited citations.',
+                why: 'Accelerates technological analysis and competitive research for initial outcome designs.'
+            },
+            'Gemini Deep Research': {
+                desc: 'Performs multi-step, autonomous agentic research across web-scale data to solve highly complex planning questions.',
+                why: 'Deeply analyzes non-functional requirements and industry standards for outcome formatting.'
+            },
+            'Eraser AI': {
+                desc: 'A markdown-first diagrams-as-code editor that generates architecture flowcharts and sequence maps automatically.',
+                why: 'Speeds up visual design by converting text descriptions into structured diagrams.'
+            },
+            'Mermaid AI': {
+                desc: 'Generates live, text-defined architectural diagrams, flowcharts, and sequence maps directly from specifications.',
+                why: 'Provides markdown-native diagram rendering inside code documentation.'
+            },
+            'Structurizr': {
+                desc: 'Creates software architecture models based on the C4 model from simple code declarations.',
+                why: 'Ensures strict conceptual integrity across microservice designs.'
+            },
+            'IcePanel': {
+                desc: 'An interactive modeling tool designed to map complex microservice architectures and integration topologies.',
+                why: 'Provides visual hierarchy navigation for systems architecture.'
+            },
+            'CrewAI': {
+                desc: 'Orchestrates role-playing autonomous agent squads to collaborate on complex coding and design processes.',
+                why: 'Allows multi-agent groups to execute sequential planning and delivery tasks.'
+            },
+            'LangGraph': {
+                desc: 'A stateful, multi-agent orchestration framework for building cyclical agent graph applications.',
+                why: 'Enables complex agent workflows with strict loop and branching conditions.'
+            },
+            'AutoGen': {
+                desc: 'A framework that enables multiple conversational agents to interact with one another to solve tasks.',
+                why: 'Provides customizable and multi-agent conversational layouts.'
+            },
+            'Dify': {
+                desc: 'An LLM application development platform that compiles agent tasks and prompt flows visually.',
+                why: 'Maintains user-friendly execution controls for multi-agent applications.'
+            },
+            'ArchUnit': {
+                desc: 'Validates Java architecture patterns and dependency configurations programmatically.',
+                why: 'Enforces architectural rules and prevents package dependency leakage.'
+            },
+            'SonarQube AI': {
+                desc: 'Inspects code quality and detects security vulnerabilities using automated AI rules.',
+                why: 'Ensures clean-code standards and prevents logical security bugs.'
+            },
+            'Snyk AI': {
+                desc: 'Scans code and packages for security vulnerabilities and provides real-time remediation suggestions.',
+                why: 'Enforces strict secure coding and dependency standards.'
+            },
+            'Swimm': {
+                desc: 'Generates and maintains walk-through code documentation that stays in sync with codebase updates.',
+                why: 'Keeps documentation relevant and prevents developer knowledge rot.'
+            },
+            'Notion AI': {
+                desc: 'Generates structured templates, documentation summaries, and engineering playbooks inline.',
+                why: 'Accelerates documentation formatting and team-wide playbook authoring.'
+            },
+            'Linear AI': {
+                desc: 'Organizes system tickets and schedules tasks with predictive delivery estimates.',
+                why: 'Translates high-level business goals into actionable backlog tickets.'
+            },
+            'Jira Product Discovery AI': {
+                desc: 'Gathers ideas and maps product specifications directly to delivery roadmaps.',
+                why: 'Enables product managers to capture ideas and plan development milestones.'
+            },
+            'Cursor': {
+                desc: 'An AI-first code editor designed to write, refactor, and review code with deep codebase context.',
+                why: 'Provides context-aware code generation directly in the workspace.'
+            },
+            'GitHub Copilot Workspace': {
+                desc: 'A task-centric environment where developers direct agents from issues to pull requests.',
+                why: 'Enables developers to manage broad feature changes from a single specification.'
+            },
+            'Sourcegraph Cody': {
+                desc: 'An AI coding assistant that searches massive repositories to write code based on large contexts.',
+                why: 'Quickly navigates complex multi-repo architectures.'
+            },
+            'Claude Code': {
+                desc: 'An agentic CLI tool that edits files, runs tests, and commits code directly in your terminal.',
+                why: 'Automates complex terminal workflows and command execution.'
+            },
+            'Devin': {
+                desc: 'An autonomous software engineer that writes, tests, and deploys full applications independently.',
+                why: 'Handles end-to-end engineering tasks with a sandboxed terminal and browser.'
+            },
+            'Codex': {
+                desc: 'Translates natural language prompts into high-quality code across dozens of programming languages.',
+                why: 'Generates clean logic and boilerplate scripts instantly.'
+            },
+            'Gemini CLI': {
+                desc: 'Executes terminal prompts and generates command scripts directly using Gemini models.',
+                why: 'Enables terminal-native script generation and quick system searches.'
+            },
+            'Aider': {
+                desc: 'An AI pair programming tool that writes code and creates git commits directly in your terminal.',
+                why: 'Speeds up editing loops by auto-generating commits for changes.'
+            },
+            'CodeRabbit': {
+                desc: 'Provides automated, line-by-line pull request reviews with context-aware code fixes.',
+                why: 'Catches logical errors and reviews code before branch merges.'
+            },
+            'GitHub Copilot Code Review': {
+                desc: 'Autocompletes pull request reviews with inline feedback based on repo standards.',
+                why: 'Enforces repository style guides during team reviews.'
+            },
+            'Qase AI': {
+                desc: 'Generates test cases and maps validation requirements to active test runs.',
+                why: 'Maintains strict coverage metrics mapped to business specifications.'
+            },
+            'TestRail AI': {
+                desc: 'Organizes and prioritizes manual and automated test runs inside development cycles.',
+                why: 'Ensures quality assurance teams maintain clean execution histories.'
+            },
+            'PractiTest AI': {
+                desc: 'An end-to-end QA management platform that maps test requirements to execution metrics.',
+                why: 'Implements clear quality-gate checks across release releases.'
+            },
+            'Testim': {
+                desc: 'Creates stable UI automation test cases using AI-based smart locators.',
+                why: 'Reduces test maintenance by adapting to UI layout updates.'
+            },
+            'Functionize': {
+                desc: 'Executes cloud-scale UI tests using natural language definitions.',
+                why: 'Enables teams to design test cases without writing code.'
+            },
+            'Mabl': {
+                desc: 'Automates regression, API, and visual testing inside continuous delivery pipelines.',
+                why: 'Ensures UI functionality remains intact across system builds.'
+            },
+            'Antigravity': {
+                desc: 'An advanced agentic testing suite that generates robust test scripts and executes test suites.',
+                why: 'Accelerates test execution and automates test writing.'
+            },
+            'CodiumAI': {
+                desc: 'Analyzes code to generate comprehensive unit tests and find edge cases automatically.',
+                why: 'Improves unit test coverage and alerts developers to code regressions.'
+            },
+            'Semgrep AI': {
+                desc: 'An automated static analysis tool that scans code for security vulnerabilities and compliance issues.',
+                why: 'Prevents security vulnerabilities from entering production environments.'
+            },
+            'Launchable': {
+                desc: 'Selects the most relevant test cases to run based on code changes to minimize cycle times.',
+                why: 'Optimizes test build times without reducing quality assurance.'
+            },
+            'Rootly AI': {
+                desc: 'Automates incident response and recovery workflows directly inside communication tools.',
+                why: 'Accelerates issue mitigation and automates page updates.'
+            },
+            'FireHydrant AI': {
+                desc: 'Coordinates post-incident reviews and maps operational outages to resolution metrics.',
+                why: 'Maintains structural operational histories and schedules team on-calls.'
+            },
+            'Atlassian Intelligence': {
+                desc: 'Generates status summaries and maps incident resolutions directly to Jira tickets.',
+                why: 'Speeds up stakeholder updates during high-priority incidents.'
+            },
+            'PagerDuty Copilot': {
+                desc: 'Suggests recovery steps and summarizes active platform alarms to triage team pages.',
+                why: 'Minimizes Mean Time to Resolution (MTTR) with automated incident triage.'
+            },
+            'Datadog Bits AI': {
+                desc: 'Analyzes metric anomalies and searches telemetry logs to identify system failures.',
+                why: 'Speeds up root-cause analysis by highlighting log errors.'
+            },
+            'New Relic AI': {
+                desc: 'Monitors application performance metrics and suggests query optimizations.',
+                why: 'Provides real-time visibility into transaction speed and backend load.'
+            },
+            'Dynatrace Davis AI': {
+                desc: 'Identifies performance degradation factors in hybrid cloud infrastructures.',
+                why: 'Enables automatic topology discovery and bottleneck tracing.'
+            },
+            'Jira AI': {
+                desc: 'Automates issue descriptions and suggests sprint planning paths.',
+                why: 'Reduces project management overhead inside planning stages.'
+            },
+            'Gemini Canvas': {
+                desc: 'An interactive canvas designed to coordinate workflow models and integration schemas.',
+                why: 'Provides real-time schema drawing capability.'
+            },
+            'Draw.io': {
+                desc: 'An open-source charting editor for designing structural database and system layouts.',
+                why: 'Enables visual modeling of interfaces and entity relationships.'
+            },
+            'Gemini Enterprise': {
+                desc: 'Leverages advanced Google models to generate structured system designs and code configurations.',
+                why: 'Provides high-capacity reasoning for enterprise setups.'
+            },
+            'Postman AI': {
+                desc: 'Generates API contracts, test collections, and documentation from endpoint specs.',
+                why: 'Accelerates interface verification and mock setup.'
+            },
+            'Cursor Enterprise': {
+                desc: 'A secure, team-wide IDE that enforces local privacy standards for all code generation tasks.',
+                why: 'Enables context-aware coding without compromising data compliance.'
+            },
+            'Tricentis Tosca AI': {
+                desc: 'Enables codeless test automation and optimization across enterprise applications.',
+                why: 'Reduces quality assurance cycle times for packaged software integrations.'
+            },
+            'Microsoft Playwright MCP': {
+                desc: 'A model-controlled automation library for executing browser tests and visual checks.',
+                why: 'Provides automated UI verification within standard pipelines.'
+            },
+            'Postman MCP': {
+                desc: 'An agentic tool designed to test endpoints and execute collections automatically.',
+                why: 'Validates integration payloads during build stages.'
+            },
+            'Google Sheets AI': {
+                desc: 'Organizes system requirements and calculates milestone schedules from plans.',
+                why: 'Enables rapid project tracking and tabular data sorting.'
+            },
+            'Gemini': {
+                desc: 'Google\'s family of multimodal AI models that processes text, code, and images to solve problems.',
+                why: 'Enables versatile content creation and reasoning tasks.'
+            },
+            'Google Vids': {
+                desc: 'An AI-powered video generator that creates interactive walkthrough presentations for reviews.',
+                why: 'Accelerates stakeholder updates with automated visual guides.'
+            },
+            'GitHub Copilot': {
+                desc: 'An AI pair programmer that autocompletes lines and blocks of code as you type.',
+                why: 'Speeds up boilerplate code generation inside editor environments.'
+            },
+            'GitHub MCP': {
+                desc: 'An agentic tool for managing repositories, committing code, and opening pull requests.',
+                why: 'Automates source-control tasks within delivery pipelines.'
+            }
+        };
+
         // Drawer Controller with Dynamic Content Mapping
         function openDrawer(domain, lifecycle) {
             const dataSet = loadedMatrixData[domain] ? loadedMatrixData[domain][lifecycle] : null;
@@ -3296,6 +3536,9 @@
                     ? '<span class="flex h-3 w-3 relative mt-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span></span>'
                     : '<span class="w-3 h-3 rounded-full bg-slate-300 mt-1.5"></span>';
 
+                // Look up tool-specific details or fall back to general dataset values
+                const details = TOOL_DETAILS[tool] || { desc: dataSet.desc, why: dataSet.why };
+
                 solutionCard.innerHTML = `
                     <div class="flex items-start space-x-4">
                         <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center font-bold text-slate-800 text-[18px] shadow-sm shrink-0">
@@ -3306,8 +3549,8 @@
                                 <span class="text-[19px] font-bold text-slate-950">${tool}</span>
                                 <span class="text-[13px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-0.5 rounded-full">Accelerated ${dataSet.acceleration || '40%'}</span>
                             </div>
-                            <p class="text-[16px] text-slate-650 font-medium leading-relaxed">${dataSet.desc}</p>
-                            <span class="block text-[14px] text-indigo-700 font-bold">Why Recommended: <span class="text-slate-655 font-medium">${dataSet.why || 'Enables AI-native execution mapping to replace tedious manual steps.'}</span></span>
+                            <p class="text-[16px] text-slate-650 font-medium leading-relaxed">${details.desc}</p>
+                            <span class="block text-[14px] text-indigo-700 font-bold">Why Recommended: <span class="text-slate-655 font-medium">${details.why || 'Enables AI-native execution mapping to replace tedious manual steps.'}</span></span>
                         </div>
                     </div>
                     <div class="shrink-0 pl-3">
