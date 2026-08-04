@@ -4426,6 +4426,7 @@
 
             // Render Registered Accounts Catalog
             const accounts = getRegisteredAccounts();
+            accounts.sort((a, b) => a.username.localeCompare(b.username, undefined, { sensitivity: 'base', numeric: true }));
             const usersContainer = document.getElementById('admin-users-tbody');
             if (usersContainer) {
                 usersContainer.innerHTML = accounts.map(u => `
@@ -4443,9 +4444,9 @@
                             <div class="flex items-center justify-end space-x-2">
                                 <button onclick="resetUserPassword('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
                                 ${u.username === 'admin'
-                                    ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
-                                    : `<button onclick="deleteCustomUser('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
-                                }
+                        ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
+                        : `<button onclick="deleteCustomUser('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
+                    }
                             </div>
                         </td>
                     </tr>
