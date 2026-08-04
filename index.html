@@ -4426,7 +4426,11 @@
 
             // Render Registered Accounts Catalog
             const accounts = getRegisteredAccounts();
-            accounts.sort((a, b) => a.username.localeCompare(b.username, undefined, { sensitivity: 'base', numeric: true }));
+            accounts.sort((a, b) => {
+                if (a.username.toLowerCase() === 'admin') return -1;
+                if (b.username.toLowerCase() === 'admin') return 1;
+                return a.username.localeCompare(b.username, undefined, { sensitivity: 'base', numeric: true });
+            });
             const usersContainer = document.getElementById('admin-users-tbody');
             if (usersContainer) {
                 usersContainer.innerHTML = accounts.map(u => `
