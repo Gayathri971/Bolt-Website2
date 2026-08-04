@@ -2065,6 +2065,17 @@
 
             <!-- Section 3: Asset Libraries removed -->
         </div>
+
+        <!-- Drawer Footer (Sticky at bottom) -->
+        <div class="p-6 border-t border-slate-150 bg-slate-50 flex items-center justify-end shrink-0">
+            <button onclick="goToNextCard()" id="drawer-next-btn"
+                class="inline-flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all duration-150 cursor-pointer text-[15px] focus:outline-none">
+                <span>Next Card</span>
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
     </div>
 
     <!-- Core Application State Engine -->
@@ -2073,6 +2084,8 @@
         let currentActivePage = 'landing'; // landing, build, blueprints
         let loadedMatrixData = {};
         let isBlueprintExpanded = false; // Flag to control proven blueprints expansion state
+        let currentOpenDomain = '';
+        let currentOpenLifecycle = '';
 
         // Color palette registry mapped to specs
         const colorPalette = {
@@ -3530,6 +3543,8 @@
 
         // Drawer Controller with Dynamic Content Mapping
         function openDrawer(domain, lifecycle) {
+            currentOpenDomain = domain;
+            currentOpenLifecycle = lifecycle;
             const dataSet = loadedMatrixData[domain] ? loadedMatrixData[domain][lifecycle] : null;
             if (!dataSet) return;
 
@@ -3619,7 +3634,49 @@
             setTimeout(() => {
                 overlay.classList.add('hidden');
             }, 300);
-        }        // Video Modal Handlers
+        }
+
+        // Navigate to the next card in the matrix (row by row, wrapping at the end)
+        function goToNextCard() {
+            if (!currentOpenDomain || !currentOpenLifecycle) return;
+
+            const domains = [
+                'Architecture & Solution Design',
+                'Development & Engineering',
+                'QA & Cybersecurity',
+                'Operations & Support'
+            ];
+
+            const lifecycles = [
+                'Business Intent',
+                'Solution Specification',
+                'Agentic Delivery',
+                'Verification',
+                'Learning Operations'
+            ];
+
+            let dIdx = domains.indexOf(currentOpenDomain);
+            let lIdx = lifecycles.indexOf(currentOpenLifecycle);
+
+            if (dIdx === -1 || lIdx === -1) return;
+
+            lIdx++;
+            if (lIdx >= lifecycles.length) {
+                lIdx = 0;
+                dIdx++;
+            }
+            if (dIdx >= domains.length) {
+                dIdx = 0;
+            }
+
+            // Scroll the drawer panel content back to the top
+            const panel = document.getElementById('drawer-panel');
+            if (panel) panel.scrollTop = 0;
+
+            openDrawer(domains[dIdx], lifecycles[lIdx]);
+        }
+
+        // Video Modal Handlers
         function openVideoModal(title, duration, videoUrl) {
             document.getElementById('video-modal-title').innerText = title;
             document.getElementById('video-modal-duration').innerText = duration;
