@@ -4524,6 +4524,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initRegisteredAccounts();
             checkAuthSession();
+            fetchGlobalHistoryFromCloud();
 
             // Auto-load High-Resolution YouTube Placeholders to solve blurry thumbnails
             const iframes = document.querySelectorAll('iframe[src*="youtube.com/embed/"]');
@@ -4800,7 +4801,7 @@
                                 <tr
                                     class="bg-slate-50 text-slate-600 font-extrabold text-xs uppercase tracking-wider border-b border-slate-200">
                                     <th class="py-3 px-4">User Name</th>
-                                    <th class="py-3 px-4">Email</th>
+                                    <th class="py-3 px-4">Username</th>
                                     <th class="py-3 px-4">Login Date</th>
                                     <th class="py-3 px-4">Login Time</th>
                                 </tr>
