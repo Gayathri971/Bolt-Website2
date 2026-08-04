@@ -616,8 +616,44 @@
                             </div>
 
                             <!-- CENTER BOLT TRANSITION BADGE -->
-                            <div class="lg:col-span-2 flex items-center justify-center py-2">
-                                <div class="relative flex items-center justify-center">
+                            <div class="lg:col-span-2 flex items-center justify-center py-2 relative">
+                                <!-- Desktop Horizontal Arrow -->
+                                <div
+                                    class="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[185px] h-16 pointer-events-none z-0">
+                                    <svg viewBox="0 0 240 60" xmlns="http://www.w3.org/2000/svg"
+                                        class="w-full h-full drop-shadow-[0_2px_6px_rgba(168,85,247,0.08)]">
+                                        <defs>
+                                            <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" stop-color="#ded6fe" stop-opacity="0.0" />
+                                                <stop offset="30%" stop-color="#ded6fe" stop-opacity="0.9" />
+                                                <stop offset="60%" stop-color="#ded6fe" stop-opacity="1.0" />
+                                                <stop offset="100%" stop-color="#c7b5fa" stop-opacity="1.0" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M 0,18 L 205,18 L 205,8 L 240,30 L 205,52 L 205,42 L 0,42 Z"
+                                            fill="url(#arrowGrad)" />
+                                    </svg>
+                                </div>
+
+                                <!-- Mobile/Tablet Vertical Arrow -->
+                                <div
+                                    class="block lg:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-[160px] pointer-events-none z-0">
+                                    <svg viewBox="0 0 60 240" xmlns="http://www.w3.org/2000/svg"
+                                        class="w-full h-full drop-shadow-[0_2px_6px_rgba(168,85,247,0.08)]">
+                                        <defs>
+                                            <linearGradient id="verticalArrowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                <stop offset="0%" stop-color="#ded6fe" stop-opacity="0.0" />
+                                                <stop offset="30%" stop-color="#ded6fe" stop-opacity="0.9" />
+                                                <stop offset="60%" stop-color="#ded6fe" stop-opacity="1.0" />
+                                                <stop offset="100%" stop-color="#c7b5fa" stop-opacity="1.0" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M 18,0 L 18,205 L 8,205 L 30,240 L 52,205 L 42,205 L 42,0 Z"
+                                            fill="url(#verticalArrowGrad)" />
+                                    </svg>
+                                </div>
+
+                                <div class="relative flex items-center justify-center z-10">
                                     <div class="absolute inset-0 bg-indigo-500/20 rounded-full blur-xl"></div>
                                     <div
                                         class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 border-2 border-indigo-300 shadow-xl flex flex-col items-center justify-center relative z-10">
@@ -1048,10 +1084,8 @@
 
                         </div>
                     </div>
-                </div>
-
-                <!-- WHY IT MATTERS SUB-SECTION -->
-                <div class="space-y-4 pt-2">
+                </div><!-- WHY IT MATTERS SUB-SECTION -->
+                <div class="space-y-4 pt-0 -mt-8">
                     <h3 class="text-center font-black text-2xl md:text-3xl uppercase tracking-wider text-emerald-600">
                         WHY IT
                         MATTERS</h3>
@@ -1427,10 +1461,9 @@
                                             reduction)</p>
                                     </div>
 
-                                    <!-- Folder / File Link -->
                                     <div class="pt-2">
                                         <a href="#"
-                                            onclick="alert('Opening Google Quotes Files directory'); return false;"
+                                            onclick="event.preventDefault();"
                                             class="inline-flex items-center space-x-2.5 text-indigo-700 hover:text-indigo-900 font-bold text-base hover:underline transition-all">
                                             <div class="p-2 bg-indigo-900 text-white rounded-lg shadow-sm">
                                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1967,6 +2000,15 @@
 
                         </div>
                     </div>
+
+                    <!-- Disclaimer -->
+                    <div class="border-t border-slate-150 pt-6 mt-10">
+                        <p class="text-[13px] text-slate-400 font-medium leading-relaxed text-center max-w-4xl mx-auto">
+                            Delivery examples are illustrative, aggregated, and de-identified — not representative of
+                            any specific client or confidential engagement. Linked third-party content (including
+                            videos) belongs to its respective owners.
+                        </p>
+                    </div>
                 </div>
             </section>
         </main>
@@ -2037,82 +2079,7 @@
                 </ul>
             </div>
 
-            <!-- Section 3: Asset Libraries (Exactly 3 cards) -->
-            <div class="space-y-4">
-                <h4 class="text-[14px] font-bold uppercase tracking-widest text-slate-400">Asset Libraries</h4>
-                <div class="grid grid-cols-1 gap-4">
-                    <!-- Card 1: Prompt Library -->
-                    <div
-                        class="border border-slate-150 hover:border-slate-300 p-5 rounded-2xl flex items-center justify-between group cursor-pointer transition-colors bg-white shadow-sm">
-                        <div class="flex items-center space-x-4">
-                            <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
-                                    </path>
-                                </svg>
-                            </div>
-                            <div>
-                                <span class="block text-[17px] font-bold text-slate-900">Prompt Library</span>
-                                <span class="block text-[14px] text-slate-500 font-medium">Validated operational prompts
-                                    for agents</span>
-                            </div>
-                        </div>
-                        <svg class="w-5 h-5 text-slate-400 group-hover:text-slate-750 transition-colors" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                    </div>
-
-                    <!-- Card 2: Accelerator Library -->
-                    <div
-                        class="border border-slate-150 hover:border-slate-300 p-5 rounded-2xl flex items-center justify-between group cursor-pointer transition-colors bg-white shadow-sm">
-                        <div class="flex items-center space-x-4">
-                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <span class="block text-[17px] font-bold text-slate-900">Accelerator Library</span>
-                                <span class="block text-[14px] text-slate-500 font-medium">Automation scaffolding
-                                    blueprints &amp; utility scripts</span>
-                            </div>
-                        </div>
-                        <svg class="w-5 h-5 text-slate-400 group-hover:text-slate-750 transition-colors" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                    </div>
-
-                    <!-- Card 3: Reference Assets -->
-                    <div
-                        class="border border-slate-150 hover:border-slate-300 p-5 rounded-2xl flex items-center justify-between group cursor-pointer transition-colors bg-white shadow-sm">
-                        <div class="flex items-center space-x-4">
-                            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                    </path>
-                                </svg>
-                            </div>
-                            <div>
-                                <span class="block text-[17px] font-bold text-slate-900">Reference Assets</span>
-                                <span class="block text-[14px] text-slate-500 font-medium">Completed implementation
-                                    specification reference code</span>
-                            </div>
-                        </div>
-                        <svg class="w-5 h-5 text-slate-400 group-hover:text-slate-750 transition-colors" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
+            <!-- Section 3: Asset Libraries removed -->
         </div>
     </div>
 
@@ -3617,7 +3584,6 @@
                         <div class="space-y-1.5">
                             <div class="flex flex-wrap items-center gap-2">
                                 <span class="text-[19px] font-bold text-slate-950">${tool}</span>
-                                <span class="text-[13px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-0.5 rounded-full">Accelerated ${dataSet.acceleration || '40%'}</span>
                             </div>
                             <p class="text-[16px] text-slate-650 font-medium leading-relaxed">${details.desc}</p>
                             <span class="block text-[14px] text-indigo-700 font-bold">Why Recommended: <span class="text-slate-655 font-medium">${details.why || 'Enables AI-native execution mapping to replace tedious manual steps.'}</span></span>
