@@ -3542,6 +3542,9 @@
 
         // Helper function to resolve tool official favicon/logo URLs
         function getToolLogoURL(toolName) {
+            if (toolName === 'CrewAI') {
+                return 'images/crew.png';
+            }
             const domain = TOOL_DOMAINS[toolName] || 'google.com';
             return `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
         }
