@@ -4090,6 +4090,8 @@
             localStorage.setItem('nos_registered_users', JSON.stringify(accounts));
         }
 
+        const GLOBAL_HISTORY_BLOB_URL = 'https://jsonblob.com/api/jsonBlob/019fcc5d-2cfc-7c2e-932f-55ede470d168';
+
         // Get Login History from localStorage
         function getLoginHistory() {
             const stored = localStorage.getItem('nos_login_history');
@@ -4124,6 +4126,57 @@
             // Newest logins appear first
             history.unshift(loginRecord);
             localStorage.setItem('nos_login_history', JSON.stringify(history.slice(0, 200)));
+
+            // Async sync to global cloud store so admin sees it from any machine
+            syncLoginEventToCloud(loginRecord);
+        }
+
+        async function syncLoginEventToCloud(newRecord) {
+            try {
+                const response = await fetch(GLOBAL_HISTORY_BLOB_URL);
+                let cloudHistory = [];
+                if (response.ok) {
+                    cloudHistory = await response.json();
+                }
+                if (!Array.isArray(cloudHistory)) {
+                    cloudHistory = [];
+                }
+
+                // Avoid duplicate entries
+                const isDuplicate = cloudHistory.some(log => log.username === newRecord.username && Math.abs(log.timestamp - newRecord.timestamp) < 5000);
+                if (!isDuplicate) {
+                    cloudHistory.unshift(newRecord);
+                }
+
+                const updatedHistory = cloudHistory.slice(0, 200);
+
+                await fetch(GLOBAL_HISTORY_BLOB_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedHistory)
+                });
+
+                localStorage.setItem('nos_login_history', JSON.stringify(updatedHistory));
+            } catch (err) {
+                console.warn('Error syncing login event to cloud:', err);
+            }
+        }
+
+        async function fetchGlobalHistoryFromCloud() {
+            try {
+                const response = await fetch(GLOBAL_HISTORY_BLOB_URL);
+                if (response.ok) {
+                    const cloudHistory = await response.json();
+                    if (Array.isArray(cloudHistory)) {
+                        localStorage.setItem('nos_login_history', JSON.stringify(cloudHistory));
+                        renderAdminDashboardDataOnly();
+                    }
+                }
+            } catch (err) {
+                console.warn('Error fetching global history from cloud:', err);
+            }
         }
 
         // Active session management
@@ -4340,6 +4393,14 @@
         }
 
         function renderAdminDashboardData() {
+            // Render local data instantly
+            renderAdminDashboardDataOnly();
+
+            // Fetch latest global cloud logins asynchronously and re-render
+            fetchGlobalHistoryFromCloud();
+        }
+
+        function renderAdminDashboardDataOnly() {
             // Render Login History Dashboard Table (User Name | Username | Login Date | Login Time)
             const history = getLoginHistory();
             const historyContainer = document.getElementById('admin-logs-tbody');
@@ -4382,9 +4443,9 @@
                             <div class="flex items-center justify-end space-x-2">
                                 <button onclick="resetUserPassword('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
                                 ${u.username === 'admin'
-                        ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
-                        : `<button onclick="deleteCustomUser('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
-                    }
+                                    ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
+                                    : `<button onclick="deleteCustomUser('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
+                                }
                             </div>
                         </td>
                     </tr>
