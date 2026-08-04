@@ -2067,7 +2067,14 @@
         </div>
 
         <!-- Drawer Footer (Sticky at bottom) -->
-        <div class="p-6 border-t border-slate-150 bg-slate-50 flex items-center justify-end shrink-0">
+        <div class="p-6 border-t border-slate-150 bg-slate-50 flex items-center justify-between shrink-0">
+            <button onclick="goToPrevCard()" id="drawer-prev-btn"
+                class="inline-flex items-center space-x-2 px-5 py-3 border border-slate-300 bg-white text-slate-700 font-extrabold rounded-xl shadow-sm hover:bg-slate-50 hover:text-slate-900 transition-all duration-150 cursor-pointer text-[15px] focus:outline-none">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Prev Card</span>
+            </button>
             <button onclick="goToNextCard()" id="drawer-next-btn"
                 class="inline-flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all duration-150 cursor-pointer text-[15px] focus:outline-none">
                 <span>Next Card</span>
@@ -3634,6 +3641,46 @@
             setTimeout(() => {
                 overlay.classList.add('hidden');
             }, 300);
+        }
+
+        // Navigate to the previous card in the matrix (row by row, wrapping at the start)
+        function goToPrevCard() {
+            if (!currentOpenDomain || !currentOpenLifecycle) return;
+
+            const domains = [
+                'Architecture & Solution Design',
+                'Development & Engineering',
+                'QA & Cybersecurity',
+                'Operations & Support'
+            ];
+
+            const lifecycles = [
+                'Business Intent',
+                'Solution Specification',
+                'Agentic Delivery',
+                'Verification',
+                'Learning Operations'
+            ];
+
+            let dIdx = domains.indexOf(currentOpenDomain);
+            let lIdx = lifecycles.indexOf(currentOpenLifecycle);
+
+            if (dIdx === -1 || lIdx === -1) return;
+
+            lIdx--;
+            if (lIdx < 0) {
+                lIdx = lifecycles.length - 1;
+                dIdx--;
+            }
+            if (dIdx < 0) {
+                dIdx = domains.length - 1;
+            }
+
+            // Scroll the drawer panel content back to the top
+            const panel = document.getElementById('drawer-panel');
+            if (panel) panel.scrollTop = 0;
+
+            openDrawer(domains[dIdx], lifecycles[lIdx]);
         }
 
         // Navigate to the next card in the matrix (row by row, wrapping at the end)
