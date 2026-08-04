@@ -4309,17 +4309,29 @@
             const btnUsers = document.getElementById('admin-btn-tab-users');
 
             [tabCreate, tabLogs, tabUsers].forEach(t => t && t.classList.add('hidden'));
-            [btnCreate, btnLogs, btnUsers].forEach(b => b && b.classList.remove('border-purple-600', 'text-purple-600', 'font-black'));
+
+            const resetBtn = (btn) => {
+                if (!btn) return;
+                btn.classList.remove('border-purple-600', 'text-purple-600', 'font-extrabold');
+                btn.classList.add('border-transparent', 'text-slate-500', 'font-bold');
+            };
+            [btnCreate, btnLogs, btnUsers].forEach(resetBtn);
+
+            const activateBtn = (btn) => {
+                if (!btn) return;
+                btn.classList.remove('border-transparent', 'text-slate-500', 'font-bold');
+                btn.classList.add('border-purple-600', 'text-purple-600', 'font-extrabold');
+            };
 
             if (tabName === 'create') {
                 tabCreate.classList.remove('hidden');
-                btnCreate.classList.add('border-purple-600', 'text-purple-600', 'font-black');
+                activateBtn(btnCreate);
             } else if (tabName === 'logs') {
                 tabLogs.classList.remove('hidden');
-                btnLogs.classList.add('border-purple-600', 'text-purple-600', 'font-black');
+                activateBtn(btnLogs);
             } else if (tabName === 'users') {
                 tabUsers.classList.remove('hidden');
-                btnUsers.classList.add('border-purple-600', 'text-purple-600', 'font-black');
+                activateBtn(btnUsers);
             }
         }
 
