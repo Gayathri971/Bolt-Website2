@@ -3205,7 +3205,7 @@
                         limitedTools.forEach(tool => {
                             // Uniform borderless clean buttons on soft background for Gemini & others alike
                             toolsHTML += `
-                                <div class="w-full py-2 px-4 bg-slate-50/80 hover:bg-slate-100 text-slate-700 rounded-xl text-[16px] font-bold text-center tracking-normal transition-all duration-150">
+                                <div class="w-full py-2 px-4 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[16px] font-bold text-center tracking-normal transition-all duration-150 border border-white/5 shadow-sm">
                                     ${tool}
                                 </div>
                             `;
@@ -3213,12 +3213,12 @@
 
                         // Double click & single click event mapped explicitly. Center-aligned title is guaranteed block-centered.
                         td.innerHTML = `
-                            <div onclick="openDrawer('${domain}', '${lifecycle}')" ondblclick="openDrawer('${domain}', '${lifecycle}')" class="matrix-cell p-5 rounded-2xl border border-slate-150 hover:border-slate-300 bg-white shadow-sm cursor-pointer h-full min-h-[210px] flex flex-col justify-between space-y-3">
+                            <div onclick="openDrawer('${domain}', '${lifecycle}')" ondblclick="openDrawer('${domain}', '${lifecycle}')" class="matrix-cell p-5 rounded-2xl border border-purple-900/30 hover:border-purple-500/50 bg-gradient-to-br from-[#03092b] via-[#1a0845] to-[#4a005c] text-white shadow-lg cursor-pointer h-full min-h-[210px] flex flex-col justify-between space-y-3 transition-all duration-200 hover:shadow-purple-900/20">
                                 <div class="w-full text-center">
                                     <!-- Dynamic Premium Gradient Icon displayed center-aligned directly above header -->
                                     ${getCellIconHTML(cellData.title)}
                                     <!-- Cell Title (18px-20px range, fully centered) -->
-                                    <span class="text-[19px] font-bold text-slate-950 leading-snug block text-center">${cellData.title}</span>
+                                    <span class="text-[19px] font-bold text-white leading-snug block text-center drop-shadow-sm">${cellData.title}</span>
                                 </div>
                                 <div class="flex flex-col space-y-2 w-full">
                                     ${toolsHTML}
