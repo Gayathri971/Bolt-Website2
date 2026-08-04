@@ -3548,6 +3548,15 @@
             if (toolName === 'Swimm') {
                 return 'images/swimm.png';
             }
+            if (toolName === 'Aider') {
+                return 'images/aider.png';
+            }
+            if (toolName.includes('GitHub Copilot')) {
+                return 'images/github-copilot.svg';
+            }
+            if (toolName === 'GitHub MCP' || toolName === 'GitHub') {
+                return 'images/github.svg';
+            }
             const domain = TOOL_DOMAINS[toolName] || 'google.com';
             return `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
         }
