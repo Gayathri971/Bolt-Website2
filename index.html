@@ -37,6 +37,11 @@
 
         /* Matrix cell transition and shadow guidelines */
         .matrix-cell {
+            height: 300px !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: 'Calibri', 'Candara', 'Segoe UI', 'Optima', Arial, sans-serif !important;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -1348,6 +1353,15 @@
 
                     </div>
                 </div>
+
+                <!-- Disclaimer -->
+                <div class="border-t border-slate-150 pt-6 mt-10">
+                    <p class="text-[16px] text-slate-400 font-medium leading-relaxed text-center max-w-4xl mx-auto">
+                        Delivery examples are illustrative, aggregated, and de-identified — not representative of
+                        any specific client or confidential engagement. Linked third-party content (including
+                        videos) belongs to its respective owners.
+                    </p>
+                </div>
             </section>
 
             <!-- ========================================================= -->
@@ -1387,12 +1401,12 @@
                     class="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-visible transition-all duration-300">
                     <div class="overflow-x-auto pb-2">
                         <!-- Complete Matrix grid matching layout rules -->
-                        <table class="w-full min-w-[1500px] border-collapse text-left">
+                        <table class="w-full min-w-[1500px] border-collapse text-left table-fixed">
                             <thead>
                                 <tr class="bg-slate-50/80 border-b border-slate-200">
                                     <!-- Top-Left Corner Header -->
                                     <th
-                                        class="p-6 text-[13px] font-bold uppercase tracking-wider text-slate-400 border-r border-slate-200 w-64">
+                                        class="p-6 text-[13px] font-bold uppercase tracking-wider text-slate-400 border-r border-slate-200 w-[250px]">
                                         Delivery Domain
                                     </th>
                                     <!-- 5 Columns/Lifecycle Stages -->
@@ -3214,7 +3228,7 @@
 
                         // Double click & single click event mapped explicitly. Center-aligned title is guaranteed block-centered.
                         td.innerHTML = `
-                            <div onclick="openDrawer('${domain}', '${lifecycle}')" ondblclick="openDrawer('${domain}', '${lifecycle}')" class="matrix-cell p-5 rounded-2xl border border-slate-150 hover:border-slate-300 bg-white shadow-sm cursor-pointer h-full min-h-[210px] flex flex-col justify-between space-y-3">
+                            <div onclick="openDrawer('${domain}', '${lifecycle}')" ondblclick="openDrawer('${domain}', '${lifecycle}')" class="matrix-cell p-5 rounded-2xl border border-slate-150 hover:border-slate-300 bg-white shadow-sm cursor-pointer h-[300px] flex flex-col justify-between space-y-3">
                                 <div class="w-full text-center">
                                     <!-- Dynamic Premium Gradient Icon displayed center-aligned directly above header -->
                                     ${getCellIconHTML(cellData.title)}
@@ -3227,7 +3241,11 @@
                             </div>
                         `;
                     } else {
-                        td.innerHTML = `<div class="text-[17px] text-slate-300 italic p-4 font-bold text-center">Unconfigured</div>`;
+                        td.innerHTML = `
+                            <div class="p-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50/30 text-[17px] text-slate-300 italic font-bold text-center h-[300px] flex items-center justify-center select-none">
+                                Unconfigured
+                            </div>
+                        `;
                     }
                     tr.appendChild(td);
                 });
