@@ -170,7 +170,7 @@
             </div>
 
             <!-- Login Form -->
-            <form onsubmit="handleGatekeeperLogin(event)" class="space-y-4 pt-1">
+            <form onsubmit="return handleGatekeeperLogin(event)" class="space-y-4 pt-1">
                 <div id="gatekeeper-error-msg"
                     class="hidden p-3.5 bg-rose-950/80 border border-rose-800/80 text-rose-200 rounded-xl text-xs font-bold text-center">
                 </div>
@@ -4314,33 +4314,38 @@
 
         function handleGatekeeperLogin(e) {
             if (e) e.preventDefault();
-            const usernameInput = document.getElementById('gatekeeper-username').value.trim().toLowerCase();
-            const passwordInput = document.getElementById('gatekeeper-password').value.trim();
-            const errorBox = document.getElementById('gatekeeper-error-msg');
+            try {
+                const usernameInput = document.getElementById('gatekeeper-username').value.trim().toLowerCase();
+                const passwordInput = document.getElementById('gatekeeper-password').value.trim();
+                const errorBox = document.getElementById('gatekeeper-error-msg');
 
-            const accounts = getRegisteredAccounts();
-            const matchedUser = accounts.find(u => {
-                const sameUsername = u.username.toLowerCase() === usernameInput;
-                if (!sameUsername) return false;
-                if (u.password === passwordInput) return true;
-                // Flexible fallback for admin password variants
-                if (usernameInput === 'admin' && (passwordInput === 'Admin@123' || passwordInput === 'admin123')) {
-                    return true;
-                }
-                return false;
-            });
+                const accounts = getRegisteredAccounts();
+                const matchedUser = accounts.find(u => {
+                    const sameUsername = (u.username || '').toLowerCase() === usernameInput;
+                    if (!sameUsername) return false;
+                    if (u.password === passwordInput) return true;
+                    // Flexible fallback for admin password variants
+                    if (usernameInput === 'admin' && (passwordInput === 'Admin@123' || passwordInput === 'admin123')) {
+                        return true;
+                    }
+                    return false;
+                });
 
-            if (matchedUser) {
-                safeStorage.setItem('nos_active_user', JSON.stringify(matchedUser));
-                recordLoginEvent(matchedUser);
-                if (errorBox) errorBox.classList.add('hidden');
-                checkAuthSession();
-            } else {
-                if (errorBox) {
-                    errorBox.innerText = 'Invalid username or password. Please check your credentials.';
-                    errorBox.classList.remove('hidden');
+                if (matchedUser) {
+                    safeStorage.setItem('nos_active_user', JSON.stringify(matchedUser));
+                    recordLoginEvent(matchedUser);
+                    if (errorBox) errorBox.classList.add('hidden');
+                    checkAuthSession();
+                } else {
+                    if (errorBox) {
+                        errorBox.innerText = 'Invalid username or password. Please check your credentials.';
+                        errorBox.classList.remove('hidden');
+                    }
                 }
+            } catch (err) {
+                console.error('Error during login handler:', err);
             }
+            return false;
         }
 
         function handleLogout() {
@@ -4588,52 +4593,57 @@
         }
 
         function handleResetAdminPassword(e) {
-            e.preventDefault();
-            const newPassword = document.getElementById('reset-admin-new-password').value.trim();
-            const confirmPassword = document.getElementById('reset-admin-confirm-password').value.trim();
-            const alertBox = document.getElementById('reset-admin-alert');
+            if (e) e.preventDefault();
+            try {
+                const newPassword = document.getElementById('reset-admin-new-password').value.trim();
+                const confirmPassword = document.getElementById('reset-admin-confirm-password').value.trim();
+                const alertBox = document.getElementById('reset-admin-alert');
 
-            if (!newPassword || !confirmPassword) {
-                alertBox.className = "p-3 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-bold text-center";
-                alertBox.innerText = "Please fill in all fields.";
-                alertBox.classList.remove('hidden');
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                alertBox.className = "p-3 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-bold text-center";
-                alertBox.innerText = "Passwords do not match.";
-                alertBox.classList.remove('hidden');
-                return;
-            }
-
-            // Update registered accounts array
-            const accounts = getRegisteredAccounts();
-            const adminIdx = accounts.findIndex(u => u.email.toLowerCase() === 'admin@agivant.com');
-            if (adminIdx !== -1) {
-                accounts[adminIdx].password = newPassword;
-                saveRegisteredAccounts(accounts);
-
-                alertBox.className = "p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl text-xs font-bold text-center";
-                alertBox.innerText = "Admin password updated successfully!";
-                alertBox.classList.remove('hidden');
-
-                // Update static login helper credentials placeholder if exists
-                const adminQuickLoginBtn = document.querySelector("button[onclick*='admin@agivant.com']");
-                if (adminQuickLoginBtn) {
-                    adminQuickLoginBtn.setAttribute('onclick', `executeQuickLogin('admin@agivant.com', '${newPassword}')`);
-                    const fontMono = adminQuickLoginBtn.querySelector('.font-mono');
-                    if (fontMono) fontMono.innerText = `admin@agivant.com`;
+                if (!newPassword || !confirmPassword) {
+                    alertBox.className = "p-3 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-bold text-center";
+                    alertBox.innerText = "Please fill in all fields.";
+                    alertBox.classList.remove('hidden');
+                    return false;
                 }
 
-                setTimeout(() => {
-                    closeResetAdminModal();
-                }, 1500);
-            } else {
-                alertBox.className = "p-3 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-bold text-center";
-                alertBox.innerText = "Administrator account not found.";
-                alertBox.classList.remove('hidden');
+                if (newPassword !== confirmPassword) {
+                    alertBox.className = "p-3 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-bold text-center";
+                    alertBox.innerText = "Passwords do not match.";
+                    alertBox.classList.remove('hidden');
+                    return false;
+                }
+
+                // Update registered accounts array
+                const accounts = getRegisteredAccounts();
+                const adminIdx = accounts.findIndex(u => (u.username || '').toLowerCase() === 'admin');
+                if (adminIdx !== -1) {
+                    accounts[adminIdx].password = newPassword;
+                    saveRegisteredAccounts(accounts);
+
+                    alertBox.className = "p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl text-xs font-bold text-center";
+                    alertBox.innerText = "Admin password updated successfully!";
+                    alertBox.classList.remove('hidden');
+
+                    // Update static login helper credentials placeholder if exists
+                    const adminQuickLoginBtn = document.querySelector("button[onclick*='admin@agivant.com']");
+                    if (adminQuickLoginBtn) {
+                        adminQuickLoginBtn.setAttribute('onclick', `executeQuickLogin('admin', '${newPassword}')`);
+                        const fontMono = adminQuickLoginBtn.querySelector('.font-mono');
+                        if (fontMono) fontMono.innerText = `admin`;
+                    }
+
+                    setTimeout(() => {
+                        closeResetAdminModal();
+                    }, 1500);
+                } else {
+                    alertBox.className = "p-3 bg-rose-950/80 border border-rose-800 text-rose-200 rounded-xl text-xs font-bold text-center";
+                    alertBox.innerText = "Administrator account not found.";
+                    alertBox.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error('Error during password reset:', err);
             }
+            return false;
         }
 
         // Initialize on DOM Ready
@@ -4692,7 +4702,7 @@
             });
         });
 
-    <!-- Interactive Video Player Modal -->
+    < !--Interactive Video Player Modal-- >
     <div id="video-modal-overlay"
         class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 hidden opacity-0 transition-all duration-300">
         <div
@@ -4760,7 +4770,7 @@
         </div>
     </div>
 
-    <!-- AUTHENTICATION / LOGIN MODAL -->
+    <!--AUTHENTICATION / LOGIN MODAL-- >
     <div id="auth-modal-overlay"
         class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-all duration-300">
         <div
@@ -4813,7 +4823,7 @@
         </div>
     </div>
 
-    <!-- ADMIN USER MANAGEMENT & AUDIT LOG DASHBOARD MODAL -->
+    <!--ADMIN USER MANAGEMENT & AUDIT LOG DASHBOARD MODAL-- >
     <div id="admin-modal-overlay"
         class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 hidden opacity-0 transition-all duration-300">
         <div
@@ -4963,7 +4973,7 @@
         </div>
     </div>
 
-    <!-- RESET ADMIN PASSWORD MODAL -->
+    <!--RESET ADMIN PASSWORD MODAL-- >
             <div id="reset-admin-modal-overlay"
                 class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 hidden opacity-0 transition-all duration-300">
                 <div
@@ -4985,7 +4995,7 @@
                     </div>
 
                     <!-- Form -->
-                    <form onsubmit="handleResetAdminPassword(event)" class="space-y-4 pt-1">
+                    <form onsubmit="return handleResetAdminPassword(event)" class="space-y-4 pt-1">
                         <div id="reset-admin-alert"
                             class="hidden p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl text-xs font-bold text-center">
                         </div>
@@ -5016,6 +5026,6 @@
                     </form>
                 </div>
             </div>
-</body>
+</body >
 
-</html>
+</html >
