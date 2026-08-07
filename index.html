@@ -2160,10 +2160,10 @@
         // Safe LocalStorage wrapper to prevent crashes in environments where localStorage is blocked (like file:/// on corporate machines)
         let safeStorage = {
             _data: {},
-            setItem: function(id, val) { this._data[id] = String(val); },
-            getItem: function(id) { return this._data.hasOwnProperty(id) ? this._data[id] : null; },
-            removeItem: function(id) { delete this._data[id]; },
-            clear: function() { this._data = {}; }
+            setItem: function (id, val) { this._data[id] = String(val); },
+            getItem: function (id) { return this._data.hasOwnProperty(id) ? this._data[id] : null; },
+            removeItem: function (id) { delete this._data[id]; },
+            clear: function () { this._data = {}; }
         };
 
         try {
@@ -4964,58 +4964,58 @@
     </div>
 
     <!-- RESET ADMIN PASSWORD MODAL -->
-    <div id="reset-admin-modal-overlay"
-        class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 hidden opacity-0 transition-all duration-300">
-        <div
-            class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6 text-white animate-fadeIn">
-
-            <!-- Modal Header -->
-            <div class="text-center space-y-2">
+            <div id="reset-admin-modal-overlay"
+                class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 hidden opacity-0 transition-all duration-300">
                 <div
-                    class="inline-flex items-center justify-center bg-indigo-600/10 text-indigo-400 rounded-2xl p-3 border border-indigo-500/20">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 7a2 2 0 012 2m-5 8h1.01M9 21h6a2 2 0 002-2V9a2 2 0 00-2-2H9a2 2 0 00-2-2z">
-                        </path>
-                    </svg>
+                    class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6 text-white animate-fadeIn">
+
+                    <!-- Modal Header -->
+                    <div class="text-center space-y-2">
+                        <div
+                            class="inline-flex items-center justify-center bg-indigo-600/10 text-indigo-400 rounded-2xl p-3 border border-indigo-500/20">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 7a2 2 0 012 2m-5 8h1.01M9 21h6a2 2 0 002-2V9a2 2 0 00-2-2H9a2 2 0 00-2-2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-black tracking-tight text-white">Reset Admin Password</h3>
+                        <p class="text-xs text-slate-400 font-medium">Please enter a new password for the administrator account
+                        </p>
+                    </div>
+
+                    <!-- Form -->
+                    <form onsubmit="handleResetAdminPassword(event)" class="space-y-4 pt-1">
+                        <div id="reset-admin-alert"
+                            class="hidden p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl text-xs font-bold text-center">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-extrabold text-slate-300 uppercase tracking-wide">New Password</label>
+                            <input id="reset-admin-new-password" type="password" required placeholder="Enter new password"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:bg-slate-800 focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all" />
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-extrabold text-slate-300 uppercase tracking-wide">Confirm
+                                Password</label>
+                            <input id="reset-admin-confirm-password" type="password" required placeholder="Confirm new password"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:bg-slate-800 focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all" />
+                        </div>
+
+                        <div class="flex space-x-3 pt-2">
+                            <button type="button" onclick="closeResetAdminModal()"
+                                class="w-1/2 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition-all cursor-pointer">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="w-1/2 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black rounded-xl text-sm transition-all cursor-pointer">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <h3 class="text-2xl font-black tracking-tight text-white">Reset Admin Password</h3>
-                <p class="text-xs text-slate-400 font-medium">Please enter a new password for the administrator account
-                </p>
             </div>
-
-            <!-- Form -->
-            <form onsubmit="handleResetAdminPassword(event)" class="space-y-4 pt-1">
-                <div id="reset-admin-alert"
-                    class="hidden p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl text-xs font-bold text-center">
-                </div>
-
-                <div class="space-y-1.5">
-                    <label class="text-xs font-extrabold text-slate-300 uppercase tracking-wide">New Password</label>
-                    <input id="reset-admin-new-password" type="password" required placeholder="Enter new password"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:bg-slate-800 focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all" />
-                </div>
-
-                <div class="space-y-1.5">
-                    <label class="text-xs font-extrabold text-slate-300 uppercase tracking-wide">Confirm
-                        Password</label>
-                    <input id="reset-admin-confirm-password" type="password" required placeholder="Confirm new password"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:bg-slate-800 focus:border-indigo-500 focus:outline-none text-sm font-medium transition-all" />
-                </div>
-
-                <div class="flex space-x-3 pt-2">
-                    <button type="button" onclick="closeResetAdminModal()"
-                        class="w-1/2 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm transition-all cursor-pointer">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                        class="w-1/2 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black rounded-xl text-sm transition-all cursor-pointer">
-                        Update Password
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 </body>
 
 </html>
