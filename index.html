@@ -1474,7 +1474,7 @@
                                 <div
                                     class="relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-black aspect-[16/9] flex items-center justify-center group">
                                     <iframe class="w-full h-full rounded-2xl"
-                                        src="https://www.youtube.com/embed/mViFYTwWvcM"
+                                        data-src="https://www.youtube.com/embed/mViFYTwWvcM"
                                         title="Spec-Driven Development: AI Assisted Coding Explained" frameborder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -1525,7 +1525,7 @@
                                 <div
                                     class="relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-black aspect-[16/9] flex items-center justify-center group">
                                     <iframe class="w-full h-full rounded-2xl"
-                                        src="https://www.youtube.com/embed/2XI-lO7ANYw"
+                                        data-src="https://www.youtube.com/embed/2XI-lO7ANYw"
                                         title="Why and when to use Spec Driven Development" frameborder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -1574,7 +1574,7 @@
                                 <div
                                     class="relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-black aspect-[16/9] flex items-center justify-center group">
                                     <iframe class="w-full h-full rounded-2xl"
-                                        src="https://www.youtube.com/embed/O3K-Xg3-Z04"
+                                        data-src="https://www.youtube.com/embed/O3K-Xg3-Z04"
                                         title="Spec Driven Development using Spec Kit" frameborder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -1633,7 +1633,7 @@
                                 <div
                                     class="relative rounded-2xl overflow-hidden shadow-lg border border-slate-800 bg-black aspect-[16/9] flex items-center justify-center group">
                                     <iframe class="w-full h-full rounded-2xl"
-                                        src="https://www.youtube.com/embed/UtZyvtexJRM"
+                                        data-src="https://www.youtube.com/embed/UtZyvtexJRM"
                                         title="Spec Driven Development using OpenSpec" frameborder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -2157,6 +2157,25 @@
 
     <!-- Core Application State Engine -->
     <script>
+        // Safe LocalStorage wrapper to prevent crashes in environments where localStorage is blocked (like file:/// on corporate machines)
+        let safeStorage = {
+            _data: {},
+            setItem: function(id, val) { this._data[id] = String(val); },
+            getItem: function(id) { return this._data.hasOwnProperty(id) ? this._data[id] : null; },
+            removeItem: function(id) { delete this._data[id]; },
+            clear: function() { this._data = {}; }
+        };
+
+        try {
+            if (window.localStorage) {
+                window.localStorage.setItem('__storage_test__', '1');
+                window.localStorage.removeItem('__storage_test__');
+                safeStorage = window.localStorage;
+            }
+        } catch (e) {
+            console.warn('localStorage is blocked in this environment. Using in-memory fallback storage.');
+        }
+
         // Global State Variables
         let currentActivePage = 'landing'; // landing, build, blueprints
         let loadedMatrixData = {};
@@ -3847,6 +3866,10 @@
 
                 // If YouTube or Vimeo link, render iframe
                 if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) {
+                    if (window.location.protocol === 'file:') {
+                        window.open(url, '_blank');
+                        return;
+                    }
                     let embedUrl = url;
                     if (url.includes('watch?v=')) {
                         embedUrl = url.replace('watch?v=', 'embed/');
@@ -4119,9 +4142,9 @@
 
         // Initialize registered users in localStorage with Default Accounts
         function initRegisteredAccounts() {
-            const stored = localStorage.getItem('nos_registered_users');
+            const stored = safeStorage.getItem('nos_registered_users');
             if (!stored) {
-                localStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
+                safeStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
                 return DEFAULT_ACCOUNTS;
             }
             try {
@@ -4130,10 +4153,10 @@
                 // Migrate schema from email to username if old data exists
                 const hasOldSchema = users.some(u => u.email !== undefined);
                 if (hasOldSchema) {
-                    localStorage.removeItem('nos_registered_users');
-                    localStorage.removeItem('nos_active_user');
-                    localStorage.removeItem('nos_login_history');
-                    localStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
+                    safeStorage.removeItem('nos_registered_users');
+                    safeStorage.removeItem('nos_active_user');
+                    safeStorage.removeItem('nos_login_history');
+                    safeStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
                     return DEFAULT_ACCOUNTS;
                 }
 
@@ -4150,10 +4173,10 @@
                         users[idx].role = defaultAcc.role;
                     }
                 });
-                localStorage.setItem('nos_registered_users', JSON.stringify(users));
+                safeStorage.setItem('nos_registered_users', JSON.stringify(users));
                 return users;
             } catch (e) {
-                localStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
+                safeStorage.setItem('nos_registered_users', JSON.stringify(DEFAULT_ACCOUNTS));
                 return DEFAULT_ACCOUNTS;
             }
         }
@@ -4163,14 +4186,14 @@
         }
 
         function saveRegisteredAccounts(accounts) {
-            localStorage.setItem('nos_registered_users', JSON.stringify(accounts));
+            safeStorage.setItem('nos_registered_users', JSON.stringify(accounts));
         }
 
         const GLOBAL_HISTORY_BLOB_URL = 'https://jsonblob.com/api/jsonBlob/019fcc5d-2cfc-7c2e-932f-55ede470d168';
 
         // Get Login History from localStorage
         function getLoginHistory() {
-            const stored = localStorage.getItem('nos_login_history');
+            const stored = safeStorage.getItem('nos_login_history');
             if (!stored) return [];
             try {
                 return JSON.parse(stored);
@@ -4201,7 +4224,7 @@
 
             // Newest logins appear first
             history.unshift(loginRecord);
-            localStorage.setItem('nos_login_history', JSON.stringify(history.slice(0, 200)));
+            safeStorage.setItem('nos_login_history', JSON.stringify(history.slice(0, 200)));
 
             // Async sync to global cloud store so admin sees it from any machine
             syncLoginEventToCloud(loginRecord);
@@ -4234,7 +4257,7 @@
                     body: JSON.stringify(updatedHistory)
                 });
 
-                localStorage.setItem('nos_login_history', JSON.stringify(updatedHistory));
+                safeStorage.setItem('nos_login_history', JSON.stringify(updatedHistory));
             } catch (err) {
                 console.warn('Error syncing login event to cloud:', err);
             }
@@ -4246,7 +4269,7 @@
                 if (response.ok) {
                     const cloudHistory = await response.json();
                     if (Array.isArray(cloudHistory)) {
-                        localStorage.setItem('nos_login_history', JSON.stringify(cloudHistory));
+                        safeStorage.setItem('nos_login_history', JSON.stringify(cloudHistory));
                         renderAdminDashboardDataOnly();
                     }
                 }
@@ -4257,7 +4280,7 @@
 
         // Active session management
         function getActiveSession() {
-            const stored = localStorage.getItem('nos_active_user');
+            const stored = safeStorage.getItem('nos_active_user');
             if (!stored) return null;
             try {
                 return JSON.parse(stored);
@@ -4308,7 +4331,7 @@
             });
 
             if (matchedUser) {
-                localStorage.setItem('nos_active_user', JSON.stringify(matchedUser));
+                safeStorage.setItem('nos_active_user', JSON.stringify(matchedUser));
                 recordLoginEvent(matchedUser);
                 if (errorBox) errorBox.classList.add('hidden');
                 checkAuthSession();
@@ -4321,7 +4344,7 @@
         }
 
         function handleLogout() {
-            localStorage.removeItem('nos_active_user');
+            safeStorage.removeItem('nos_active_user');
             checkAuthSession();
         }
 
@@ -4620,12 +4643,12 @@
             fetchGlobalHistoryFromCloud();
 
             // Auto-load High-Resolution YouTube Placeholders to solve blurry thumbnails
-            const iframes = document.querySelectorAll('iframe[src*="youtube.com/embed/"]');
+            const iframes = document.querySelectorAll('iframe[data-src*="youtube.com/embed/"]');
             iframes.forEach((iframe) => {
                 // If it is inside the video modal, ignore it
                 if (iframe.id === 'modal-iframe-element') return;
 
-                const src = iframe.src;
+                const src = iframe.getAttribute('data-src');
                 const title = iframe.getAttribute('title') || 'YouTube Video';
                 const match = src.match(/\/embed\/([^/?]+)/);
                 if (!match) return;
@@ -4650,21 +4673,24 @@
                 `;
 
                 wrapper.addEventListener('click', () => {
-                    const autoplaySrc = src.includes('?') ? `${src}&autoplay=1` : `${src}?autoplay=1`;
-                    const activeIframe = document.createElement('iframe');
-                    activeIframe.className = 'w-full h-full rounded-2xl';
-                    activeIframe.src = autoplaySrc;
-                    activeIframe.title = title;
-                    activeIframe.frameBorder = '0';
-                    activeIframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-                    activeIframe.allowFullscreen = true;
-                    wrapper.parentNode.replaceChild(activeIframe, wrapper);
+                    if (window.location.protocol === 'file:') {
+                        window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+                    } else {
+                        const autoplaySrc = src.includes('?') ? `${src}&autoplay=1` : `${src}?autoplay=1`;
+                        const activeIframe = document.createElement('iframe');
+                        activeIframe.className = 'w-full h-full rounded-2xl';
+                        activeIframe.src = autoplaySrc;
+                        activeIframe.title = title;
+                        activeIframe.frameBorder = '0';
+                        activeIframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+                        activeIframe.allowFullscreen = true;
+                        wrapper.parentNode.replaceChild(activeIframe, wrapper);
+                    }
                 });
 
                 iframe.parentNode.replaceChild(wrapper, iframe);
             });
         });
-    </script>
 
     <!-- Interactive Video Player Modal -->
     <div id="video-modal-overlay"
