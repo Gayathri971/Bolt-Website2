@@ -4194,6 +4194,18 @@
         let adminLogsData = [];
         let adminLogsPage = 1;
         const adminLogsLimit = 10;
+        let isLocalAPIAvailable = false;
+
+        async function checkAPIAvailability() {
+            try {
+                const response = await fetch('/api/login-history');
+                if (response.status === 200 || response.status === 204) {
+                    isLocalAPIAvailable = true;
+                    return;
+                }
+            } catch (e) {}
+            isLocalAPIAvailable = false;
+        }
 
         function getDeviceOS() {
             const ua = navigator.userAgent;
@@ -4236,8 +4248,7 @@
         }
 
         async function fetchHistoryFromAPI() {
-            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const url = isLocal ? '/api/login-history' : GLOBAL_HISTORY_BLOB_URL;
+            const url = isLocalAPIAvailable ? '/api/login-history' : GLOBAL_HISTORY_BLOB_URL;
             
             try {
                 const response = await fetch(url);
@@ -4254,10 +4265,8 @@
         }
 
         async function saveLoginEventToAPI(newRecord) {
-            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            
             try {
-                if (isLocal) {
+                if (isLocalAPIAvailable) {
                     await fetch('/api/login-history', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -4319,7 +4328,7 @@
             };
 
             await saveLoginEventToAPI(record);
-            
+
             if (user.role === 'admin' && document.getElementById('admin-modal-overlay') && !document.getElementById('admin-modal-overlay').classList.contains('hidden')) {
                 renderAdminDashboardData();
             }
@@ -4341,8 +4350,8 @@
             const dateFilter = document.getElementById('admin-logs-filter-date')?.value || 'All';
 
             let filtered = adminLogsData.filter(log => {
-                const matchesSearch = !searchVal || 
-                    (log.username || '').toLowerCase().includes(searchVal) || 
+                const matchesSearch = !searchVal ||
+                    (log.username || '').toLowerCase().includes(searchVal) ||
                     (log.name || '').toLowerCase().includes(searchVal);
 
                 const matchesStatus = statusFilter === 'All' || log.status === statusFilter;
@@ -4375,7 +4384,7 @@
                     tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs font-medium">No activity records found matching filters.</td></tr>`;
                 } else {
                     tbody.innerHTML = paginated.map(log => {
-                        const statusBadge = log.status === 'Success' 
+                        const statusBadge = log.status === 'Success'
                             ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">Success</span>`
                             : `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-200">Failed</span>`;
 
@@ -4501,7 +4510,7 @@
                 const now = new Date();
                 const logoutDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const logoutTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
+
                 const logoutRecord = {
                     sessionId: activeUser.sessionId,
                     logoutTime: `${logoutDate} ${logoutTime}`
@@ -4809,9 +4818,10 @@
         }
 
         // Initialize on DOM Ready
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             initRegisteredAccounts();
             checkAuthSession();
+            await checkAPIAvailability();
             fetchGlobalHistoryFromCloud();
 
             // Auto-load High-Resolution YouTube Placeholders to solve blurry thumbnails
@@ -5083,20 +5093,27 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h4 class="text-lg font-extrabold text-slate-900">User Login Activity History</h4>
-                            <p class="text-xs text-slate-500 font-medium">Logged user login events with timestamp. Newest logins appear first.</p>
+                            <p class="text-xs text-slate-500 font-medium">Logged user login events with timestamp.
+                                Newest logins appear first.</p>
                         </div>
-                        <div class="text-[11px] text-slate-500 font-bold bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 self-start sm:self-center">
+                        <div
+                            class="text-[11px] text-slate-500 font-bold bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 self-start sm:self-center">
                             📅 Data retained for 30 days
                         </div>
                     </div>
 
                     <!-- Search and Filters Bar -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                         <div class="relative">
-                            <input id="admin-logs-search" type="text" oninput="renderAdminLogsUI()" placeholder="Search user or username..."
+                            <input id="admin-logs-search" type="text" oninput="renderAdminLogsUI()"
+                                placeholder="Search user or username..."
                                 class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-xs font-medium" />
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
                             </span>
                         </div>
                         <div>
@@ -5141,8 +5158,10 @@
                     <div class="flex items-center justify-between pt-2">
                         <span id="admin-logs-pagination-info" class="text-xs text-slate-500 font-semibold"></span>
                         <div class="flex items-center space-x-2">
-                            <button id="admin-logs-prev-btn" onclick="changeAdminLogsPage(-1)" class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-                            <button id="admin-logs-next-btn" onclick="changeAdminLogsPage(1)" class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                            <button id="admin-logs-prev-btn" onclick="changeAdminLogsPage(-1)"
+                                class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                            <button id="admin-logs-next-btn" onclick="changeAdminLogsPage(1)"
+                                class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
                         </div>
                     </div>
                 </div>
