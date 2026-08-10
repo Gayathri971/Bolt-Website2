@@ -4191,22 +4191,109 @@
 
         const GLOBAL_HISTORY_BLOB_URL = 'https://jsonblob.com/api/jsonBlob/019fcc5d-2cfc-7c2e-932f-55ede470d168';
 
-        // Get Login History from localStorage
-        function getLoginHistory() {
-            const stored = safeStorage.getItem('nos_login_history');
-            if (!stored) return [];
+        let adminLogsData = [];
+        let adminLogsPage = 1;
+        const adminLogsLimit = 10;
+
+        function getDeviceOS() {
+            const ua = navigator.userAgent;
+            if (/windows/i.test(ua)) return 'Windows';
+            if (/macintosh|mac os x/i.test(ua)) return 'macOS';
+            if (/android/i.test(ua)) return 'Android';
+            if (/iphone|ipad|ipod/i.test(ua)) return 'iOS';
+            if (/linux/i.test(ua)) return 'Linux';
+            return 'Unknown';
+        }
+
+        function getBrowserName() {
+            const ua = navigator.userAgent;
+            if (/edg/i.test(ua)) return 'Edge';
+            if (/chrome/i.test(ua) && !/chromium/i.test(ua)) return 'Chrome';
+            if (/safari/i.test(ua) && !/chrome/i.test(ua)) return 'Safari';
+            if (/firefox/i.test(ua)) return 'Firefox';
+            if (/trident/i.test(ua) || /msie/i.test(ua)) return 'IE';
+            return 'Unknown';
+        }
+
+        function getDeviceType() {
+            const ua = navigator.userAgent;
+            if (/mobile|android|iphone|ipad|ipod/i.test(ua)) return 'Mobile';
+            if (/tablet/i.test(ua)) return 'Tablet';
+            return 'Desktop';
+        }
+
+        async function fetchPublicIP() {
             try {
-                return JSON.parse(stored);
+                const response = await fetch('https://api.ipify.org?format=json');
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.ip || 'Unknown';
+                }
             } catch (e) {
-                return [];
+                console.warn('Could not fetch public IP:', e);
+            }
+            return 'Unknown';
+        }
+
+        async function fetchHistoryFromAPI() {
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const url = isLocal ? '/api/login-history' : GLOBAL_HISTORY_BLOB_URL;
+            
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const logs = await response.json();
+                    if (Array.isArray(logs)) {
+                        return logs;
+                    }
+                }
+            } catch (e) {
+                console.warn('Error fetching login history from API:', e);
+            }
+            return [];
+        }
+
+        async function saveLoginEventToAPI(newRecord) {
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            try {
+                if (isLocal) {
+                    await fetch('/api/login-history', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newRecord)
+                    });
+                } else {
+                    const response = await fetch(GLOBAL_HISTORY_BLOB_URL);
+                    let logs = [];
+                    if (response.ok) {
+                        logs = await response.json();
+                    }
+                    if (!Array.isArray(logs)) logs = [];
+
+                    const idx = logs.findIndex(log => log.sessionId === newRecord.sessionId && log.sessionId);
+                    if (idx !== -1) {
+                        logs[idx] = { ...logs[idx], ...newRecord };
+                    } else {
+                        logs.unshift(newRecord);
+                    }
+
+                    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                    const filtered = logs.filter(log => log.timestamp >= thirtyDaysAgo);
+
+                    await fetch(GLOBAL_HISTORY_BLOB_URL, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(filtered)
+                    });
+                }
+            } catch (e) {
+                console.warn('Error saving login event to API:', e);
             }
         }
 
-        // Record User Login Event (User Name, Username, Login Date, Login Time)
-        function recordLoginEvent(user) {
-            const history = getLoginHistory();
+        async function recordLoginEvent(user, status) {
             const now = new Date();
-
             const loginDate = now.toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric'
             });
@@ -4214,68 +4301,123 @@
                 hour: '2-digit', minute: '2-digit', second: '2-digit'
             });
 
-            const loginRecord = {
-                name: user.name || user.username,
+            const ip = await fetchPublicIP();
+
+            const record = {
                 username: user.username,
+                name: user.name || user.username,
                 loginDate: loginDate,
                 loginTime: loginTime,
+                logoutTime: '',
+                ipAddress: ip,
+                device: getDeviceType(),
+                browser: getBrowserName(),
+                os: getDeviceOS(),
+                status: status || 'Success',
+                sessionId: user.sessionId || '',
                 timestamp: now.getTime()
             };
 
-            // Newest logins appear first
-            history.unshift(loginRecord);
-            safeStorage.setItem('nos_login_history', JSON.stringify(history.slice(0, 200)));
-
-            // Async sync to global cloud store so admin sees it from any machine
-            syncLoginEventToCloud(loginRecord);
-        }
-
-        async function syncLoginEventToCloud(newRecord) {
-            try {
-                const response = await fetch(GLOBAL_HISTORY_BLOB_URL);
-                let cloudHistory = [];
-                if (response.ok) {
-                    cloudHistory = await response.json();
-                }
-                if (!Array.isArray(cloudHistory)) {
-                    cloudHistory = [];
-                }
-
-                // Avoid duplicate entries
-                const isDuplicate = cloudHistory.some(log => log.username === newRecord.username && Math.abs(log.timestamp - newRecord.timestamp) < 5000);
-                if (!isDuplicate) {
-                    cloudHistory.unshift(newRecord);
-                }
-
-                const updatedHistory = cloudHistory.slice(0, 200);
-
-                await fetch(GLOBAL_HISTORY_BLOB_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(updatedHistory)
-                });
-
-                safeStorage.setItem('nos_login_history', JSON.stringify(updatedHistory));
-            } catch (err) {
-                console.warn('Error syncing login event to cloud:', err);
+            await saveLoginEventToAPI(record);
+            
+            if (user.role === 'admin' && document.getElementById('admin-modal-overlay') && !document.getElementById('admin-modal-overlay').classList.contains('hidden')) {
+                renderAdminDashboardData();
             }
         }
 
         async function fetchGlobalHistoryFromCloud() {
             try {
-                const response = await fetch(GLOBAL_HISTORY_BLOB_URL);
-                if (response.ok) {
-                    const cloudHistory = await response.json();
-                    if (Array.isArray(cloudHistory)) {
-                        safeStorage.setItem('nos_login_history', JSON.stringify(cloudHistory));
-                        renderAdminDashboardDataOnly();
-                    }
-                }
+                const logs = await fetchHistoryFromAPI();
+                adminLogsData = logs;
+                renderAdminDashboardDataOnly();
             } catch (err) {
-                console.warn('Error fetching global history from cloud:', err);
+                console.warn('Error fetching global history:', err);
             }
+        }
+
+        function renderAdminLogsUI() {
+            const searchVal = (document.getElementById('admin-logs-search')?.value || '').trim().toLowerCase();
+            const statusFilter = document.getElementById('admin-logs-filter-status')?.value || 'All';
+            const dateFilter = document.getElementById('admin-logs-filter-date')?.value || 'All';
+
+            let filtered = adminLogsData.filter(log => {
+                const matchesSearch = !searchVal || 
+                    (log.username || '').toLowerCase().includes(searchVal) || 
+                    (log.name || '').toLowerCase().includes(searchVal);
+
+                const matchesStatus = statusFilter === 'All' || log.status === statusFilter;
+
+                let matchesDate = true;
+                if (dateFilter === 'Today') {
+                    const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    matchesDate = log.loginDate === todayStr;
+                } else if (dateFilter === 'Last7Days') {
+                    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                    matchesDate = log.timestamp >= sevenDaysAgo;
+                }
+
+                return matchesSearch && matchesStatus && matchesDate;
+            });
+
+            filtered.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            const totalRecords = filtered.length;
+            const totalPages = Math.ceil(totalRecords / adminLogsLimit) || 1;
+            if (adminLogsPage > totalPages) adminLogsPage = totalPages;
+            if (adminLogsPage < 1) adminLogsPage = 1;
+
+            const startIndex = (adminLogsPage - 1) * adminLogsLimit;
+            const paginated = filtered.slice(startIndex, startIndex + adminLogsLimit);
+
+            const tbody = document.getElementById('admin-logs-tbody');
+            if (tbody) {
+                if (paginated.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs font-medium">No activity records found matching filters.</td></tr>`;
+                } else {
+                    tbody.innerHTML = paginated.map(log => {
+                        const statusBadge = log.status === 'Success' 
+                            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">Success</span>`
+                            : `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-200">Failed</span>`;
+
+                        const deviceOS = `${log.device || 'Desktop'} (${log.os || 'Unknown OS'})`;
+
+                        return `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs md:text-sm">
+                                <td class="py-3 px-4">
+                                    <div class="font-bold text-slate-900">${log.name || log.username}</div>
+                                    <div class="text-[10px] text-slate-500 font-medium">@${log.username}</div>
+                                </td>
+                                <td class="py-3 px-4 text-slate-700 font-medium">${log.loginDate}<br><span class="text-[10px] text-slate-400">${log.loginTime}</span></td>
+                                <td class="py-3 px-4 text-slate-600 font-medium">${log.logoutTime || '<span class="text-slate-400 font-normal italic">- Active Session -</span>'}</td>
+                                <td class="py-3 px-4 text-slate-600 font-medium">${deviceOS}</td>
+                                <td class="py-3 px-4 text-slate-600 font-medium">${log.browser || 'Unknown'}</td>
+                                <td class="py-3 px-4 font-mono text-slate-500">${log.ipAddress || 'Unknown'}</td>
+                                <td class="py-3 px-4">${statusBadge}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            const infoSpan = document.getElementById('admin-logs-pagination-info');
+            if (infoSpan) {
+                if (totalRecords === 0) {
+                    infoSpan.innerText = 'Showing 0 of 0 records';
+                } else {
+                    const endIndex = Math.min(startIndex + adminLogsLimit, totalRecords);
+                    infoSpan.innerText = `Showing ${startIndex + 1}-${endIndex} of ${totalRecords} records`;
+                }
+            }
+
+            const prevBtn = document.getElementById('admin-logs-prev-btn');
+            const nextBtn = document.getElementById('admin-logs-next-btn');
+            if (prevBtn) prevBtn.disabled = adminLogsPage <= 1;
+            if (nextBtn) nextBtn.disabled = adminLogsPage >= totalPages;
+        }
+
+        function changeAdminLogsPage(direction) {
+            adminLogsPage += direction;
+            renderAdminLogsUI();
         }
 
         // Active session management
@@ -4332,11 +4474,16 @@
                 });
 
                 if (matchedUser) {
+                    const sessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+                    matchedUser.sessionId = sessionId;
                     safeStorage.setItem('nos_active_user', JSON.stringify(matchedUser));
-                    recordLoginEvent(matchedUser);
+                    recordLoginEvent(matchedUser, 'Success');
                     if (errorBox) errorBox.classList.add('hidden');
                     checkAuthSession();
                 } else {
+                    const failedUser = { username: usernameInput, name: usernameInput };
+                    recordLoginEvent(failedUser, 'Failed');
+
                     if (errorBox) {
                         errorBox.innerText = 'Invalid username or password. Please check your credentials.';
                         errorBox.classList.remove('hidden');
@@ -4348,7 +4495,19 @@
             return false;
         }
 
-        function handleLogout() {
+        async function handleLogout() {
+            const activeUser = getActiveSession();
+            if (activeUser && activeUser.sessionId) {
+                const now = new Date();
+                const logoutDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const logoutTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                const logoutRecord = {
+                    sessionId: activeUser.sessionId,
+                    logoutTime: `${logoutDate} ${logoutTime}`
+                };
+                await saveLoginEventToAPI(logoutRecord);
+            }
             safeStorage.removeItem('nos_active_user');
             checkAuthSession();
         }
@@ -4519,28 +4678,8 @@
         }
 
         function renderAdminDashboardDataOnly() {
-            // Render Login History Dashboard Table (User Name | Username | Login Date | Login Time)
-            const history = getLoginHistory();
-            const historyContainer = document.getElementById('admin-logs-tbody');
-            if (historyContainer) {
-                if (history.length === 0) {
-                    historyContainer.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400 text-xs font-medium">No user login activity recorded yet. Log in with an account to generate entries.</td></tr>`;
-                } else {
-                    historyContainer.innerHTML = history.map(log => `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs md:text-sm">
-                            <td class="py-3.5 px-4 font-bold text-slate-900">${log.name}</td>
-                            <td class="py-3.5 px-4 text-slate-700">
-                                <div class="flex items-center space-x-2">
-                                    <span class="w-2.5 h-2.5 rounded-full ${log.username === 'admin' ? 'bg-purple-600 shadow-[0_0_8px_#9333ea]' : 'bg-indigo-500'}"></span>
-                                    <span>${log.username}</span>
-                                </div>
-                            </td>
-                            <td class="py-3.5 px-4 font-semibold text-slate-600">${log.loginDate}</td>
-                            <td class="py-3.5 px-4 font-mono text-xs text-indigo-600 font-bold">${log.loginTime}</td>
-                        </tr>
-                    `).join('');
-                }
-            }
+            // Render Login History first
+            renderAdminLogsUI();
 
             // Render Registered Accounts Catalog
             let accounts = getRegisteredAccounts();
@@ -4941,29 +5080,70 @@
 
                 <!-- TAB 2: LOGGED IN USERS & TIMESTAMP AUDIT LOG -->
                 <div id="admin-tab-logs" class="hidden space-y-4">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h4 class="text-lg font-extrabold text-slate-900">User Login Activity History</h4>
-                            <p class="text-xs text-slate-500 font-medium">Logged user login events with timestamp.
-                                Newest logins appear first.</p>
+                            <p class="text-xs text-slate-500 font-medium">Logged user login events with timestamp. Newest logins appear first.</p>
+                        </div>
+                        <div class="text-[11px] text-slate-500 font-bold bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 self-start sm:self-center">
+                            📅 Data retained for 30 days
                         </div>
                     </div>
 
-                    <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                        <table class="w-full text-left border-collapse">
+                    <!-- Search and Filters Bar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div class="relative">
+                            <input id="admin-logs-search" type="text" oninput="renderAdminLogsUI()" placeholder="Search user or username..."
+                                class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-xs font-medium" />
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </span>
+                        </div>
+                        <div>
+                            <select id="admin-logs-filter-status" onchange="renderAdminLogsUI()"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-xs font-medium">
+                                <option value="All">All Statuses</option>
+                                <option value="Success">Success Only</option>
+                                <option value="Failed">Failed Only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="admin-logs-filter-date" onchange="renderAdminLogsUI()"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-xs font-medium">
+                                <option value="All">All Days (Last 30 days)</option>
+                                <option value="Today">Today Only</option>
+                                <option value="Last7Days">Last 7 Days</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
                             <thead>
                                 <tr
                                     class="bg-slate-50 text-slate-600 font-extrabold text-xs uppercase tracking-wider border-b border-slate-200">
-                                    <th class="py-3 px-4">User Name</th>
-                                    <th class="py-3 px-4">Username</th>
-                                    <th class="py-3 px-4">Login Date</th>
-                                    <th class="py-3 px-4">Login Time</th>
+                                    <th class="py-3 px-4">User</th>
+                                    <th class="py-3 px-4">Login Date/Time</th>
+                                    <th class="py-3 px-4">Logout Time</th>
+                                    <th class="py-3 px-4">Device / OS</th>
+                                    <th class="py-3 px-4">Browser</th>
+                                    <th class="py-3 px-4">IP Address</th>
+                                    <th class="py-3 px-4">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-logs-tbody">
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="flex items-center justify-between pt-2">
+                        <span id="admin-logs-pagination-info" class="text-xs text-slate-500 font-semibold"></span>
+                        <div class="flex items-center space-x-2">
+                            <button id="admin-logs-prev-btn" onclick="changeAdminLogsPage(-1)" class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                            <button id="admin-logs-next-btn" onclick="changeAdminLogsPage(1)" class="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                        </div>
                     </div>
                 </div>
 
