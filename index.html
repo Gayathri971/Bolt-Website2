@@ -4392,6 +4392,8 @@
                 alert('Access restricted to Administrators.');
                 return;
             }
+            const searchInput = document.getElementById('admin-users-search');
+            if (searchInput) searchInput.value = '';
             renderAdminDashboardData();
             const modal = document.getElementById('admin-modal-overlay');
             modal.classList.remove('hidden');
@@ -4541,7 +4543,18 @@
             }
 
             // Render Registered Accounts Catalog
-            const accounts = getRegisteredAccounts();
+            let accounts = getRegisteredAccounts();
+
+            // Search filter
+            const searchInput = document.getElementById('admin-users-search');
+            const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            if (searchQuery) {
+                accounts = accounts.filter(u =>
+                    (u.name && u.name.toLowerCase().includes(searchQuery)) ||
+                    (u.username && u.username.toLowerCase().includes(searchQuery))
+                );
+            }
+
             accounts.sort((a, b) => {
                 if (a.username.toLowerCase() === 'admin') return -1;
                 if (b.username.toLowerCase() === 'admin') return 1;
@@ -4549,28 +4562,38 @@
             });
             const usersContainer = document.getElementById('admin-users-tbody');
             if (usersContainer) {
-                usersContainer.innerHTML = accounts.map(u => `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs md:text-sm">
-                        <td class="py-3 px-4 font-bold text-slate-900">${u.name || u.username}</td>
-                        <td class="py-3 px-4 font-bold text-slate-700">${u.username}</td>
-                        <td class="py-3 px-4 font-mono text-slate-600 bg-slate-50/80 rounded px-2 py-0.5 inline-block my-1">${u.password}</td>
-                        <td class="py-3 px-4">
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}">
-                                ${u.role}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4 font-semibold text-slate-600">${u.createdAt || 'System Default'}</td>
-                        <td class="py-3 px-4 text-right">
-                            <div class="flex items-center justify-end space-x-2">
-                                <button onclick="resetUserPassword('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
-                                ${u.username === 'admin'
-                        ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
-                        : `<button onclick="deleteCustomUser('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
-                    }
-                            </div>
-                        </td>
-                    </tr>
-                `).join('');
+                if (accounts.length === 0) {
+                    usersContainer.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-slate-400 text-xs font-medium">
+                                No registered user accounts found matching "${searchQuery}".
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    usersContainer.innerHTML = accounts.map(u => `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs md:text-sm">
+                            <td class="py-3 px-4 font-bold text-slate-900">${u.name || u.username}</td>
+                            <td class="py-3 px-4 font-bold text-slate-700">${u.username}</td>
+                            <td class="py-3 px-4 font-mono text-slate-600 bg-slate-50/80 rounded px-2 py-0.5 inline-block my-1">${u.password}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}">
+                                    ${u.role}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 font-semibold text-slate-600">${u.createdAt || 'System Default'}</td>
+                            <td class="py-3 px-4 text-right">
+                                <div class="flex items-center justify-end space-x-2">
+                                    <button onclick="resetUserPassword('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200 cursor-pointer">Reset Password</button>
+                                    ${u.username === 'admin'
+                            ? '<span class="px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-200 bg-slate-50/50 rounded-lg">System Account</span>'
+                            : `<button onclick="deleteCustomUser('${u.username}')" class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer">Delete</button>`
+                        }
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
             }
         }
 
@@ -4946,9 +4969,25 @@
 
                 <!-- TAB 3: REGISTERED ACCOUNTS CATALOG -->
                 <div id="admin-tab-users" class="hidden space-y-4">
-                    <div>
-                        <h4 class="text-lg font-extrabold text-slate-900">All Registered User Accounts</h4>
-                        <p class="text-xs text-slate-500 font-medium">Catalog of static and admin-created accounts</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h4 class="text-lg font-extrabold text-slate-900">All Registered User Accounts</h4>
+                            <p class="text-xs text-slate-500 font-medium">Catalog of static and admin-created accounts
+                            </p>
+                        </div>
+                        <div class="relative w-full sm:w-72">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </span>
+                            <input id="admin-users-search" type="text" oninput="renderAdminDashboardDataOnly()"
+                                placeholder="Search by name or username..."
+                                class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-xs font-semibold shadow-sm transition-all" />
+                        </div>
                     </div>
 
                     <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
