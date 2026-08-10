@@ -4203,7 +4203,7 @@
                     isLocalAPIAvailable = true;
                     return;
                 }
-            } catch (e) {}
+            } catch (e) { }
             isLocalAPIAvailable = false;
         }
 
@@ -4249,7 +4249,7 @@
 
         async function fetchHistoryFromAPI() {
             const url = isLocalAPIAvailable ? '/api/login-history' : GLOBAL_HISTORY_BLOB_URL;
-            
+
             try {
                 const response = await fetch(url);
                 if (response.ok) {
@@ -4429,6 +4429,290 @@
             renderAdminLogsUI();
         }
 
+        function formatDuration(sec) {
+            if (!sec || sec < 0) return '0s';
+            const hrs = Math.floor(sec / 3600);
+            const mins = Math.floor((sec % 3600) / 60);
+            const secs = sec % 60;
+
+            let parts = [];
+            if (hrs > 0) parts.push(`${hrs}h`);
+            if (mins > 0) parts.push(`${mins}m`);
+            if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+            return parts.join(' ');
+        }
+
+        function renderAdminMetricsUI() {
+            const tbody = document.getElementById('admin-metrics-tbody');
+            if (!tbody) return;
+
+            const userMetrics = {};
+            const activeUsers = getRegisteredAccounts();
+
+            activeUsers.forEach(u => {
+                userMetrics[u.username.toLowerCase()] = {
+                    username: u.username,
+                    name: u.name || u.username,
+                    visits: 0,
+                    totalDuration: 0,
+                    lastDuration: null,
+                    lastLoginTime: null,
+                    isActive: false
+                };
+            });
+
+            adminLogsData.forEach(log => {
+                const uName = (log.username || '').toLowerCase();
+                if (!uName) return;
+
+                if (!userMetrics[uName]) {
+                    userMetrics[uName] = {
+                        username: log.username,
+                        name: log.name || log.username,
+                        visits: 0,
+                        totalDuration: 0,
+                        lastDuration: null,
+                        lastLoginTime: null,
+                        isActive: false
+                    };
+                }
+
+                if (log.status === 'Success') {
+                    userMetrics[uName].visits++;
+
+                    const loginTimeStr = `${log.loginDate} ${log.loginTime}`;
+                    const loginTimeMs = log.timestamp || 0;
+
+                    if (!userMetrics[uName].lastLoginTime || loginTimeMs > userMetrics[uName].lastLoginTime.timestamp) {
+                        userMetrics[uName].lastLoginTime = {
+                            str: loginTimeStr,
+                            timestamp: loginTimeMs
+                        };
+                    }
+
+                    if (!log.logoutTime) {
+                        const isRecent = (Date.now() - loginTimeMs) < 24 * 60 * 60 * 1000;
+                        if (isRecent) {
+                            userMetrics[uName].isActive = true;
+                        }
+                    }
+
+                    let duration = 0;
+                    if (log.logoutTimestamp && log.timestamp) {
+                        duration = Math.round((log.logoutTimestamp - log.timestamp) / 1000);
+                    } else if (log.duration) {
+                        duration = log.duration;
+                    } else if (log.logoutTime && log.timestamp) {
+                        const logoutMs = Date.parse(log.logoutTime);
+                        if (!isNaN(logoutMs)) {
+                            const diff = logoutMs - log.timestamp;
+                            if (diff > 0) {
+                                duration = Math.round(diff / 1000);
+                            }
+                        }
+                    }
+
+                    if (duration > 0) {
+                        userMetrics[uName].totalDuration += duration;
+
+                        if (!userMetrics[uName].lastDurationLogTime || loginTimeMs > userMetrics[uName].lastDurationLogTime) {
+                            userMetrics[uName].lastDuration = duration;
+                            userMetrics[uName].lastDurationLogTime = loginTimeMs;
+                        }
+                    }
+                }
+            });
+
+            const metricsList = Object.values(userMetrics);
+
+            metricsList.sort((a, b) => {
+                if (b.visits !== a.visits) return b.visits - a.visits;
+                return a.username.localeCompare(b.username);
+            });
+
+            if (metricsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs font-medium">No user session metrics available.</td></tr>`;
+            } else {
+                tbody.innerHTML = metricsList.map(m => {
+                    const activeBadge = m.isActive
+                        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">Active Now</span>`
+                        : `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium uppercase bg-slate-100 text-slate-500 border border-slate-200">Inactive</span>`;
+
+                    const totalDurFormatted = m.totalDuration > 0 ? formatDuration(m.totalDuration) : '0s';
+                    const lastDurFormatted = m.lastDuration !== null ? formatDuration(m.lastDuration) : 'N/A';
+
+                    return `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs md:text-sm">
+                            <td class="py-3 px-4">
+                                <div class="font-bold text-slate-900">${m.name}</div>
+                                <div class="text-[10px] text-slate-500 font-medium">@${m.username}</div>
+                            </td>
+                            <td class="py-3 px-4 text-slate-700 font-semibold">${m.visits}</td>
+                            <td class="py-3 px-4 text-slate-600 font-semibold">${totalDurFormatted}</td>
+                            <td class="py-3 px-4 text-slate-600 font-semibold">${lastDurFormatted}</td>
+                            <td class="py-3 px-4">${activeBadge}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportHistoryToCSV() {
+            if (adminLogsData.length === 0) {
+                alert("No history data to export.");
+                return;
+            }
+            const headers = ['Username', 'Name', 'Login Date', 'Login Time', 'Logout Time', 'Duration (Seconds)', 'IP Address', 'Device', 'Browser', 'OS', 'Status', 'Session ID'];
+            const rows = adminLogsData.map(log => {
+                let duration = '';
+                if (log.timestamp && log.logoutTimestamp) {
+                    duration = Math.round((log.logoutTimestamp - log.timestamp) / 1000);
+                } else if (log.duration) {
+                    duration = log.duration;
+                } else if (log.logoutTime && log.timestamp) {
+                    const logoutMs = Date.parse(log.logoutTime);
+                    if (!isNaN(logoutMs)) {
+                        const diff = logoutMs - log.timestamp;
+                        if (diff > 0) {
+                            duration = Math.round(diff / 1000);
+                        }
+                    }
+                }
+                return [
+                    log.username,
+                    log.name,
+                    log.loginDate,
+                    log.loginTime,
+                    log.logoutTime,
+                    duration,
+                    log.ipAddress,
+                    log.device,
+                    log.browser,
+                    log.os,
+                    log.status,
+                    log.sessionId
+                ].map(val => {
+                    const str = val === undefined || val === null ? '' : String(val);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                }).join(',');
+            });
+
+            const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\r\n');
+            downloadCSV(csvContent, `login_history_${new Date().toISOString().slice(0, 10)}.csv`);
+        }
+
+        function exportMetricsToCSV() {
+            const userMetrics = {};
+            const activeUsers = getRegisteredAccounts();
+
+            activeUsers.forEach(u => {
+                userMetrics[u.username.toLowerCase()] = {
+                    username: u.username,
+                    name: u.name || u.username,
+                    visits: 0,
+                    totalDuration: 0,
+                    lastDuration: null,
+                    lastLoginTime: null,
+                    isActive: false
+                };
+            });
+
+            adminLogsData.forEach(log => {
+                const uName = (log.username || '').toLowerCase();
+                if (!uName) return;
+                if (!userMetrics[uName]) {
+                    userMetrics[uName] = {
+                        username: log.username,
+                        name: log.name || log.username,
+                        visits: 0,
+                        totalDuration: 0,
+                        lastDuration: null,
+                        lastLoginTime: null,
+                        isActive: false
+                    };
+                }
+                if (log.status === 'Success') {
+                    userMetrics[uName].visits++;
+                    const loginTimeMs = log.timestamp || 0;
+                    if (!userMetrics[uName].lastLoginTime || loginTimeMs > userMetrics[uName].lastLoginTime.timestamp) {
+                        userMetrics[uName].lastLoginTime = {
+                            str: `${log.loginDate} ${log.loginTime}`,
+                            timestamp: loginTimeMs
+                        };
+                    }
+                    if (!log.logoutTime) {
+                        const isRecent = (Date.now() - loginTimeMs) < 24 * 60 * 60 * 1000;
+                        if (isRecent) {
+                            userMetrics[uName].isActive = true;
+                        }
+                    }
+                    let duration = 0;
+                    if (log.logoutTimestamp && log.timestamp) {
+                        duration = Math.round((log.logoutTimestamp - log.timestamp) / 1000);
+                    } else if (log.duration) {
+                        duration = log.duration;
+                    } else if (log.logoutTime && log.timestamp) {
+                        const logoutMs = Date.parse(log.logoutTime);
+                        if (!isNaN(logoutMs)) {
+                            const diff = logoutMs - log.timestamp;
+                            if (diff > 0) {
+                                duration = Math.round(diff / 1000);
+                            }
+                        }
+                    }
+                    if (duration > 0) {
+                        userMetrics[uName].totalDuration += duration;
+                        if (!userMetrics[uName].lastDurationLogTime || loginTimeMs > userMetrics[uName].lastDurationLogTime) {
+                            userMetrics[uName].lastDuration = duration;
+                            userMetrics[uName].lastDurationLogTime = loginTimeMs;
+                        }
+                    }
+                }
+            });
+
+            const headers = ['Username', 'Name', 'Number of Visits', 'Total Session Duration (Seconds)', 'Total Session Duration (Formatted)', 'Last Session Duration (Seconds)', 'Last Session Duration (Formatted)', 'Last Login Date/Time', 'Is Active'];
+            const rows = Object.values(userMetrics).map(m => {
+                const totalDurFormatted = m.totalDuration > 0 ? formatDuration(m.totalDuration) : '0s';
+                const lastDurFormatted = m.lastDuration !== null ? formatDuration(m.lastDuration) : 'N/A';
+                const lastLoginStr = m.lastLoginTime ? m.lastLoginTime.str : '';
+                return [
+                    m.username,
+                    m.name,
+                    m.visits,
+                    m.totalDuration,
+                    totalDurFormatted,
+                    m.lastDuration !== null ? m.lastDuration : '',
+                    lastDurFormatted,
+                    lastLoginStr,
+                    m.isActive ? 'Yes' : 'No'
+                ].map(val => {
+                    const str = val === undefined || val === null ? '' : String(val);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                }).join(',');
+            });
+
+            const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\r\n');
+            downloadCSV(csvContent, `user_session_metrics_${new Date().toISOString().slice(0, 10)}.csv`);
+        }
+
         // Active session management
         function getActiveSession() {
             const stored = safeStorage.getItem('nos_active_user');
@@ -4449,11 +4733,13 @@
                 // Not logged in -> Show login page, hide main app
                 if (loginScreen) loginScreen.classList.remove('hidden');
                 if (appWrapper) appWrapper.classList.add('hidden');
+                if (typeof inactivityTimer !== 'undefined' && inactivityTimer) clearTimeout(inactivityTimer);
             } else {
                 // Logged in -> Hide login page, show main app
                 if (loginScreen) loginScreen.classList.add('hidden');
                 if (appWrapper) appWrapper.classList.remove('hidden');
                 updateHeaderUserInterface(activeUser);
+                if (typeof resetInactivityTimer === 'function') resetInactivityTimer();
             }
         }
 
@@ -4513,7 +4799,8 @@
 
                 const logoutRecord = {
                     sessionId: activeUser.sessionId,
-                    logoutTime: `${logoutDate} ${logoutTime}`
+                    logoutTime: `${logoutDate} ${logoutTime}`,
+                    logoutTimestamp: now.getTime()
                 };
                 await saveLoginEventToAPI(logoutRecord);
             }
@@ -4578,18 +4865,20 @@
             const tabCreate = document.getElementById('admin-tab-create');
             const tabLogs = document.getElementById('admin-tab-logs');
             const tabUsers = document.getElementById('admin-tab-users');
+            const tabMetrics = document.getElementById('admin-tab-metrics');
             const btnCreate = document.getElementById('admin-btn-tab-create');
             const btnLogs = document.getElementById('admin-btn-tab-logs');
             const btnUsers = document.getElementById('admin-btn-tab-users');
+            const btnMetrics = document.getElementById('admin-btn-tab-metrics');
 
-            [tabCreate, tabLogs, tabUsers].forEach(t => t && t.classList.add('hidden'));
+            [tabCreate, tabLogs, tabUsers, tabMetrics].forEach(t => t && t.classList.add('hidden'));
 
             const resetBtn = (btn) => {
                 if (!btn) return;
                 btn.classList.remove('border-purple-600', 'text-purple-600', 'font-extrabold');
                 btn.classList.add('border-transparent', 'text-slate-500', 'font-bold');
             };
-            [btnCreate, btnLogs, btnUsers].forEach(resetBtn);
+            [btnCreate, btnLogs, btnUsers, btnMetrics].forEach(resetBtn);
 
             const activateBtn = (btn) => {
                 if (!btn) return;
@@ -4606,6 +4895,10 @@
             } else if (tabName === 'users') {
                 tabUsers.classList.remove('hidden');
                 activateBtn(btnUsers);
+            } else if (tabName === 'metrics') {
+                if (tabMetrics) tabMetrics.classList.remove('hidden');
+                activateBtn(btnMetrics);
+                renderAdminMetricsUI();
             }
         }
 
@@ -4689,6 +4982,9 @@
         function renderAdminDashboardDataOnly() {
             // Render Login History first
             renderAdminLogsUI();
+
+            // Render Metrics
+            renderAdminMetricsUI();
 
             // Render Registered Accounts Catalog
             let accounts = getRegisteredAccounts();
@@ -4817,12 +5113,48 @@
             return false;
         }
 
+        let inactivityTimer;
+        const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+
+        function resetInactivityTimer() {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            const activeUser = getActiveSession();
+            if (activeUser) {
+                inactivityTimer = setTimeout(handleInactivityLogout, INACTIVITY_TIMEOUT);
+            }
+        }
+
+        async function handleInactivityLogout() {
+            const activeUser = getActiveSession();
+            if (activeUser && activeUser.sessionId) {
+                const now = new Date();
+                const idleTime = new Date(now.getTime() - INACTIVITY_TIMEOUT);
+                const logoutDate = idleTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const logoutTime = idleTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                const logoutRecord = {
+                    sessionId: activeUser.sessionId,
+                    logoutTime: `${logoutDate} ${logoutTime} (Auto Logout)`,
+                    logoutTimestamp: idleTime.getTime()
+                };
+                await saveLoginEventToAPI(logoutRecord);
+            }
+            safeStorage.removeItem('nos_active_user');
+            checkAuthSession();
+            alert("You have been automatically logged out due to 10 minutes of inactivity.");
+        }
+
         // Initialize on DOM Ready
         document.addEventListener('DOMContentLoaded', async () => {
             initRegisteredAccounts();
             checkAuthSession();
             await checkAPIAvailability();
             fetchGlobalHistoryFromCloud();
+
+            // Set up inactivity tracking listeners
+            ['click', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+                document.addEventListener(evt, resetInactivityTimer, true);
+            });
 
             // Auto-load High-Resolution YouTube Placeholders to solve blurry thumbnails
             const iframes = document.querySelectorAll('iframe[data-src*="youtube.com/embed/"]');
@@ -5029,6 +5361,7 @@
             </div>
 
             <!-- Tab Navigation Bar -->
+            <!-- Tab Navigation Bar -->
             <div class="flex border-b border-slate-200 space-x-6 flex-shrink-0">
                 <button id="admin-btn-tab-create" onclick="switchAdminTab('create')"
                     class="pb-3 text-sm font-extrabold text-purple-600 border-b-2 border-purple-600 transition-all cursor-pointer">
@@ -5041,6 +5374,10 @@
                 <button id="admin-btn-tab-users" onclick="switchAdminTab('users')"
                     class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent transition-all cursor-pointer">
                     📋 Registered Accounts Catalog
+                </button>
+                <button id="admin-btn-tab-metrics" onclick="switchAdminTab('metrics')"
+                    class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent transition-all cursor-pointer">
+                    📊 User Session Metrics
                 </button>
             </div>
 
@@ -5203,6 +5540,45 @@
                                 </tr>
                             </thead>
                             <tbody id="admin-users-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 4: USER SESSION METRICS -->
+                <div id="admin-tab-metrics" class="hidden space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h4 class="text-lg font-extrabold text-slate-900">User Session Analytics</h4>
+                            <p class="text-xs text-slate-500 font-medium">Session statistics including visits, total
+                                time spent, and last session duration per user.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="exportHistoryToCSV()"
+                                class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer">
+                                📥 Export History (Excel CSV)
+                            </button>
+                            <button onclick="exportMetricsToCSV()"
+                                class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer">
+                                📊 Export Metrics (Excel CSV)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[650px]">
+                            <thead>
+                                <tr
+                                    class="bg-slate-50 text-slate-600 font-extrabold text-xs uppercase tracking-wider border-b border-slate-200">
+                                    <th class="py-3 px-4">User</th>
+                                    <th class="py-3 px-4">Number of Visits</th>
+                                    <th class="py-3 px-4">Total Session Duration</th>
+                                    <th class="py-3 px-4">Last Session Duration</th>
+                                    <th class="py-3 px-4">Active Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-metrics-tbody">
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>

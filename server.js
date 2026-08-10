@@ -22,6 +22,148 @@ const MIME_TYPES = {
 
 const DB_PATH = path.join(ROOT, 'documents', 'login_history.json');
 
+function formatDuration(sec) {
+    if (!sec || sec < 0) return '0s';
+    const hrs = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const secs = sec % 60;
+    
+    let parts = [];
+    if (hrs > 0) parts.push(`${hrs}h`);
+    if (mins > 0) parts.push(`${mins}m`);
+    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+    return parts.join(' ');
+}
+
+function escapeCSV(val) {
+    if (val === undefined || val === null) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+}
+
+function writeCSV(logs) {
+    try {
+        // 1. Raw Login History CSV
+        const historyHeaders = ['Username', 'Name', 'Login Date', 'Login Time', 'Logout Time', 'Duration (Seconds)', 'IP Address', 'Device', 'Browser', 'OS', 'Status', 'Session ID'];
+        const historyRows = logs.map(log => {
+            let duration = '';
+            if (log.timestamp && log.logoutTimestamp) {
+                duration = Math.round((log.logoutTimestamp - log.timestamp) / 1000);
+            } else if (log.duration) {
+                duration = log.duration;
+            } else if (log.logoutTime && log.timestamp) {
+                const logoutMs = Date.parse(log.logoutTime);
+                if (!isNaN(logoutMs)) {
+                    const diff = logoutMs - log.timestamp;
+                    if (diff > 0) {
+                        duration = Math.round(diff / 1000);
+                    }
+                }
+            }
+            return [
+                log.username,
+                log.name,
+                log.loginDate,
+                log.loginTime,
+                log.logoutTime,
+                duration,
+                log.ipAddress,
+                log.device,
+                log.browser,
+                log.os,
+                log.status,
+                log.sessionId
+            ].map(escapeCSV).join(',');
+        });
+        
+        const historyCSV = "\uFEFF" + [historyHeaders.join(','), ...historyRows].join('\r\n');
+        fs.writeFileSync(path.join(ROOT, 'documents', 'login_history.csv'), historyCSV, 'utf8');
+
+        // 2. Metrics CSV
+        const userMetrics = {};
+        logs.forEach(log => {
+            const uName = (log.username || '').toLowerCase();
+            if (!uName) return;
+            if (!userMetrics[uName]) {
+                userMetrics[uName] = {
+                    username: log.username,
+                    name: log.name || log.username,
+                    visits: 0,
+                    totalDuration: 0,
+                    lastDuration: null,
+                    lastLoginTime: null,
+                    isActive: false
+                };
+            }
+            if (log.status === 'Success') {
+                userMetrics[uName].visits++;
+                
+                const loginTimeMs = log.timestamp || 0;
+                if (!userMetrics[uName].lastLoginTime || loginTimeMs > userMetrics[uName].lastLoginTime.timestamp) {
+                    userMetrics[uName].lastLoginTime = {
+                        str: `${log.loginDate} ${log.loginTime}`,
+                        timestamp: loginTimeMs
+                    };
+                }
+                if (!log.logoutTime) {
+                    const isRecent = (Date.now() - loginTimeMs) < 24 * 60 * 60 * 1000;
+                    if (isRecent) {
+                        userMetrics[uName].isActive = true;
+                    }
+                }
+                let duration = 0;
+                if (log.logoutTimestamp && log.timestamp) {
+                    duration = Math.round((log.logoutTimestamp - log.timestamp) / 1000);
+                } else if (log.duration) {
+                    duration = log.duration;
+                } else if (log.logoutTime && log.timestamp) {
+                    const logoutMs = Date.parse(log.logoutTime);
+                    if (!isNaN(logoutMs)) {
+                        const diff = logoutMs - log.timestamp;
+                        if (diff > 0) {
+                            duration = Math.round(diff / 1000);
+                        }
+                    }
+                }
+                if (duration > 0) {
+                    userMetrics[uName].totalDuration += duration;
+                    if (!userMetrics[uName].lastDurationLogTime || loginTimeMs > userMetrics[uName].lastDurationLogTime) {
+                        userMetrics[uName].lastDuration = duration;
+                        userMetrics[uName].lastDurationLogTime = loginTimeMs;
+                    }
+                }
+            }
+        });
+
+        const metricsHeaders = ['Username', 'Name', 'Number of Visits', 'Total Session Duration (Seconds)', 'Total Session Duration (Formatted)', 'Last Session Duration (Seconds)', 'Last Session Duration (Formatted)', 'Last Login Date/Time', 'Is Active'];
+        const metricsRows = Object.values(userMetrics).map(m => {
+            const totalDurFormatted = m.totalDuration > 0 ? formatDuration(m.totalDuration) : '0s';
+            const lastDurFormatted = m.lastDuration !== null ? formatDuration(m.lastDuration) : 'N/A';
+            const lastLoginStr = m.lastLoginTime ? m.lastLoginTime.str : '';
+            return [
+                m.username,
+                m.name,
+                m.visits,
+                m.totalDuration,
+                totalDurFormatted,
+                m.lastDuration !== null ? m.lastDuration : '',
+                lastDurFormatted,
+                lastLoginStr,
+                m.isActive ? 'Yes' : 'No'
+            ].map(escapeCSV).join(',');
+        });
+
+        const metricsCSV = "\uFEFF" + [metricsHeaders.join(','), ...metricsRows].join('\r\n');
+        fs.writeFileSync(path.join(ROOT, 'documents', 'login_metrics.csv'), metricsCSV, 'utf8');
+
+    } catch (e) {
+        console.error('Failed to write CSV files:', e);
+    }
+}
+
 const server = http.createServer((req, res) => {
     // Handle Login History API
     if (req.url.startsWith('/api/login-history')) {
@@ -80,7 +222,11 @@ const server = http.createServer((req, res) => {
                     const idx = logs.findIndex(log => log.sessionId === newRecord.sessionId && log.sessionId);
                     if (idx !== -1) {
                         // Update existing session record (e.g. adding logout timestamp)
-                        logs[idx] = { ...logs[idx], ...newRecord };
+                        const updated = { ...logs[idx], ...newRecord };
+                        if (updated.timestamp && updated.logoutTimestamp) {
+                            updated.duration = Math.round((updated.logoutTimestamp - updated.timestamp) / 1000);
+                        }
+                        logs[idx] = updated;
                     } else {
                         // Add new login record
                         logs.unshift(newRecord);
@@ -100,6 +246,7 @@ const server = http.createServer((req, res) => {
                             res.writeHead(500, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ error: 'Failed to write log' }));
                         } else {
+                            writeCSV(filtered);
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ success: true, record: newRecord }));
                         }

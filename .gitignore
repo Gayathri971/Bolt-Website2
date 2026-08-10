@@ -2,3 +2,8 @@
 .DS_Store
 Thumbs.db
 *.log
+
+# Database & Log exports
+documents/login_history.json
+documents/login_history.csv
+documents/login_metrics.csv
