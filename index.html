@@ -4360,6 +4360,11 @@
                 if (dateFilter === 'Today') {
                     const todayStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                     matchesDate = log.loginDate === todayStr;
+                } else if (dateFilter === 'Yesterday') {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const yesterdayStr = yesterday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    matchesDate = log.loginDate === yesterdayStr;
                 } else if (dateFilter === 'Last7Days') {
                     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
                     matchesDate = log.timestamp >= sevenDaysAgo;
@@ -5466,6 +5471,7 @@
                                 class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:border-purple-600 focus:outline-none text-xs font-medium">
                                 <option value="All">All Days (Last 30 days)</option>
                                 <option value="Today">Today Only</option>
+                                <option value="Yesterday">Yesterday Only</option>
                                 <option value="Last7Days">Last 7 Days</option>
                             </select>
                         </div>
