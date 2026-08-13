@@ -152,6 +152,23 @@ def write_csv(logs):
         with open(metrics_path, 'w', encoding='utf-8') as f:
             f.write('\ufeff' + ','.join(metrics_headers) + '\n' + '\n'.join(metrics_rows))
             
+        # Write daily backups to documents/backups/
+        try:
+            import datetime
+            date_str = datetime.date.today().strftime('%Y-%m-%d')
+            backups_dir = os.path.join(DIRECTORY, 'documents', 'backups')
+            os.makedirs(backups_dir, exist_ok=True)
+            
+            history_content = '\ufeff' + ','.join(history_headers) + '\n' + '\n'.join(history_rows)
+            metrics_content = '\ufeff' + ','.join(metrics_headers) + '\n' + '\n'.join(metrics_rows)
+            
+            with open(os.path.join(backups_dir, f'login_history_backup_{date_str}.csv'), 'w', encoding='utf-8') as f:
+                f.write(history_content)
+            with open(os.path.join(backups_dir, f'login_metrics_backup_{date_str}.csv'), 'w', encoding='utf-8') as f:
+                f.write(metrics_content)
+        except Exception as backup_e:
+            print("Failed to write CSV daily backup:", backup_e)
+            
     except Exception as e:
         print("Failed to write CSV:", e)
 
@@ -170,14 +187,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 except Exception:
                     pass
             
-            thirty_days_ago = int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000
-            filtered = [log for log in logs if log.get('timestamp', 0) >= thirty_days_ago] if isinstance(logs, list) else []
-
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps(filtered).encode('utf-8'))
+            self.wfile.write(json.dumps(logs).encode('utf-8'))
             return
         super().do_GET()
 
@@ -227,14 +241,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             else:
                 logs.insert(0, new_record)
 
-            thirty_days_ago = int(time.time() * 1000) - 30 * 24 * 60 * 60 * 1000
-            filtered = [log for log in logs if log.get('timestamp', 0) >= thirty_days_ago]
-
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             try:
                 with open(db_path, 'w', encoding='utf-8') as f:
-                    json.dump(filtered, f, indent=2)
-                write_csv(filtered)
+                    json.dump(logs, f, indent=2)
+                write_csv(logs)
             except Exception:
                 self.send_response(500)
                 self.end_headers()

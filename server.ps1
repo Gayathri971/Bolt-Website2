@@ -187,6 +187,22 @@ function Write-CsvLogs ($logs) {
         $metricsContent = @($metricsHeaders -join ",") + $metricsRows -join "`r`n"
         [System.IO.File]::WriteAllText($metricsPath, $metricsContent, $utf8BOM)
         
+        # Write daily backups to documents/backups/
+        try {
+            $dateString = (Get-Date).ToString("yyyy-MM-dd")
+            $backupsDir = Join-Path $dbDir "backups"
+            if (-not (Test-Path $backupsDir)) {
+                [System.IO.Directory]::CreateDirectory($backupsDir) | Out-Null
+            }
+            $historyBackupPath = Join-Path $backupsDir "login_history_backup_$dateString.csv"
+            $metricsBackupPath = Join-Path $backupsDir "login_metrics_backup_$dateString.csv"
+            
+            [System.IO.File]::WriteAllText($historyBackupPath, $historyContent, $utf8BOM)
+            [System.IO.File]::WriteAllText($metricsBackupPath, $metricsContent, $utf8BOM)
+        } catch {
+            Write-Host "Failed to write CSV daily backup: $_"
+        }
+        
     } catch {
         Write-Host "Failed to write CSV logs: $_"
     }
@@ -238,17 +254,7 @@ try {
                     } catch {}
                 }
                 
-                $thirtyDaysAgo = [DateTimeOffset]::Now.ToUnixTimeMilliseconds() - (30 * 24 * 60 * 60 * 1000)
-                $filteredLogs = @()
-                if ($logs) {
-                    foreach ($log in $logs) {
-                        if ($log.timestamp -ge $thirtyDaysAgo) {
-                            $filteredLogs += $log
-                        }
-                    }
-                }
-                
-                $json = $filteredLogs | ConvertTo-Json -Depth 5 -Compress
+                $json = $logs | ConvertTo-Json -Depth 5 -Compress
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes($json)
                 $response.ContentLength64 = $buffer.Length
                 $response.OutputStream.Write($buffer, 0, $buffer.Length)
@@ -326,21 +332,13 @@ try {
                     $updatedLogs = @($newLog) + $updatedLogs
                 }
                 
-                $thirtyDaysAgo = [DateTimeOffset]::Now.ToUnixTimeMilliseconds() - (30 * 24 * 60 * 60 * 1000)
-                $filteredLogs = @()
-                foreach ($log in $updatedLogs) {
-                    if ($log.timestamp -ge $thirtyDaysAgo) {
-                        $filteredLogs += $log
-                    }
-                }
-                
                 # Ensure directory exists
                 $dir = [System.IO.Path]::GetDirectoryName($dbPath)
                 if (-not (Test-Path $dir)) { [System.IO.Directory]::CreateDirectory($dir) | Out-Null }
                 
-                $json = $filteredLogs | ConvertTo-Json -Depth 5
+                $json = $updatedLogs | ConvertTo-Json -Depth 5
                 [System.IO.File]::WriteAllText($dbPath, $json)
-                Write-CsvLogs $filteredLogs
+                Write-CsvLogs $updatedLogs
                 
                 $respJson = '{"success":true}'
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes($respJson)

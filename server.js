@@ -159,6 +159,24 @@ function writeCSV(logs) {
         const metricsCSV = "\uFEFF" + [metricsHeaders.join(','), ...metricsRows].join('\r\n');
         fs.writeFileSync(path.join(ROOT, 'documents', 'login_metrics.csv'), metricsCSV, 'utf8');
 
+        // Write daily backups to documents/backups/
+        try {
+            const dateObj = new Date();
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+
+            const backupsDir = path.join(ROOT, 'documents', 'backups');
+            if (!fs.existsSync(backupsDir)) {
+                fs.mkdirSync(backupsDir, { recursive: true });
+            }
+            fs.writeFileSync(path.join(backupsDir, `login_history_backup_${dateString}.csv`), historyCSV, 'utf8');
+            fs.writeFileSync(path.join(backupsDir, `login_metrics_backup_${dateString}.csv`), metricsCSV, 'utf8');
+        } catch (backupErr) {
+            console.error('Failed to write CSV daily backup:', backupErr);
+        }
+
     } catch (e) {
         console.error('Failed to write CSV files:', e);
     }
@@ -183,11 +201,9 @@ const server = http.createServer((req, res) => {
                 if (!err && data) {
                     try { logs = JSON.parse(data); } catch(e) {}
                 }
-                const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-                const filtered = Array.isArray(logs) ? logs.filter(log => log.timestamp >= thirtyDaysAgo) : [];
                 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(filtered));
+                res.end(JSON.stringify(logs));
             });
             return;
         }
@@ -232,21 +248,18 @@ const server = http.createServer((req, res) => {
                         logs.unshift(newRecord);
                     }
 
-                    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-                    const filtered = logs.filter(log => log.timestamp >= thirtyDaysAgo);
-
                     // Ensure documents directory exists
                     const dir = path.dirname(DB_PATH);
                     if (!fs.existsSync(dir)) {
                         fs.mkdirSync(dir, { recursive: true });
                     }
 
-                    fs.writeFile(DB_PATH, JSON.stringify(filtered, null, 2), 'utf8', (writeErr) => {
+                    fs.writeFile(DB_PATH, JSON.stringify(logs, null, 2), 'utf8', (writeErr) => {
                         if (writeErr) {
                             res.writeHead(500, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ error: 'Failed to write log' }));
                         } else {
-                            writeCSV(filtered);
+                            writeCSV(logs);
                             res.writeHead(200, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ success: true, record: newRecord }));
                         }
