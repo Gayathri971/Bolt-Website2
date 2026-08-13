@@ -274,7 +274,7 @@ const server = http.createServer((req, res) => {
     let extname = String(path.extname(filePath)).toLowerCase();
     let contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
-    fs.readFile(filePath, (error, content) => {
+    fs.stat(filePath, (error, stats) => {
         if (error) {
             if (error.code === 'ENOENT') {
                 res.writeHead(404, { 'Content-Type': 'text/html' });
@@ -283,12 +283,42 @@ const server = http.createServer((req, res) => {
                 res.writeHead(500);
                 res.end(`Server Error: ${error.code}`, 'utf-8');
             }
-        } else {
-            res.writeHead(200, { 
+            return;
+        }
+
+        const range = req.headers.range;
+        if (range) {
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+
+            if (start >= stats.size || end >= stats.size || start > end) {
+                res.writeHead(416, {
+                    'Content-Range': `bytes */${stats.size}`,
+                    'Access-Control-Allow-Origin': '*'
+                });
+                return res.end();
+            }
+
+            const chunksize = (end - start) + 1;
+            const file = fs.createReadStream(filePath, { start, end });
+            const head = {
+                'Content-Range': `bytes ${start}-${end}/${stats.size}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunksize,
                 'Content-Type': contentType,
                 'Access-Control-Allow-Origin': '*'
-            });
-            res.end(content, 'utf-8');
+            };
+            res.writeHead(206, head);
+            file.pipe(res);
+        } else {
+            const head = {
+                'Content-Length': stats.size,
+                'Content-Type': contentType,
+                'Access-Control-Allow-Origin': '*'
+            };
+            res.writeHead(200, head);
+            fs.createReadStream(filePath).pipe(res);
         }
     });
 });

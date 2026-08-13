@@ -193,6 +193,44 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(logs).encode('utf-8'))
             return
+
+        # Handle range requests for media files
+        range_header = self.headers.get('Range')
+        if range_header and any(self.path.lower().endswith(ext) for ext in ['.mp4', '.webm', '.ogg']):
+            filepath = self.translate_path(self.path)
+            if os.path.exists(filepath) and os.path.isfile(filepath):
+                import re
+                size = os.path.getsize(filepath)
+                match = re.search(r'bytes=(\d+)-(\d*)', range_header)
+                if match:
+                    start = int(match.group(1))
+                    end = match.group(2)
+                    end = int(end) if end else size - 1
+                    
+                    if start >= size or end >= size or start > end:
+                        self.send_response(416)
+                        self.send_header('Content-Range', f'bytes */{size}')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        return
+
+                    chunk_size = end - start + 1
+                    self.send_response(206)
+                    self.send_header('Content-Type', self.guess_type(filepath))
+                    self.send_header('Content-Range', f'bytes {start}-{end}/{size}')
+                    self.send_header('Accept-Ranges', 'bytes')
+                    self.send_header('Content-Length', str(chunk_size))
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+
+                    try:
+                        with open(filepath, 'rb') as f:
+                            f.seek(start)
+                            self.wfile.write(f.read(chunk_size))
+                    except Exception as e:
+                        print(f"Error serving range request: {e}")
+                    return
+
         super().do_GET()
 
     def do_POST(self):

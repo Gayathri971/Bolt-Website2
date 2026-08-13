@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -2162,7 +2162,7 @@
                 window.localStorage.setItem('__storage_test__', '1');
                 window.localStorage.removeItem('__storage_test__');
                 safeStorage = window.localStorage;
-                
+
                 // One-time purge of old development/mock login history to start fresh from today
                 if (!safeStorage.getItem('nos_history_cleared_v2')) {
                     safeStorage.removeItem('nos_login_history');

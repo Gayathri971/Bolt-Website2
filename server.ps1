@@ -464,24 +464,58 @@ try {
         $localPath = Join-Path $PSScriptRoot $relativePath
 
         if (Test-Path $localPath -PathType Leaf) {
-            $bytes = [System.IO.File]::ReadAllBytes($localPath)
-            
             $ext = [System.IO.Path]::GetExtension($localPath).ToLower()
+            $contentType = "application/octet-stream"
             switch ($ext) {
-                ".html" { $response.ContentType = "text/html" }
-                ".css"  { $response.ContentType = "text/css" }
-                ".js"   { $response.ContentType = "text/javascript" }
-                ".png"  { $response.ContentType = "image/png" }
-                ".jpg"  { $response.ContentType = "image/jpeg" }
-                ".gif"  { $response.ContentType = "image/gif" }
-                ".mp4"  { $response.ContentType = "video/mp4" }
-                ".pdf"  { $response.ContentType = "application/pdf" }
-                default { $response.ContentType = "application/octet-stream" }
+                ".html" { $contentType = "text/html" }
+                ".css"  { $contentType = "text/css" }
+                ".js"   { $contentType = "text/javascript" }
+                ".png"  { $contentType = "image/png" }
+                ".jpg"  { $contentType = "image/jpeg" }
+                ".gif"  { $contentType = "image/gif" }
+                ".mp4"  { $contentType = "video/mp4" }
+                ".pdf"  { $contentType = "application/pdf" }
             }
-
+            $response.ContentType = $contentType
             $response.Headers.Add("Access-Control-Allow-Origin", "*")
-            $response.ContentLength64 = $bytes.Length
-            $response.OutputStream.Write($bytes, 0, $bytes.Length)
+
+            $rangeHeader = $request.Headers["Range"]
+            $fileSize = (Get-Item $localPath).Length
+
+            if ($null -ne $rangeHeader -and $rangeHeader -match "bytes=(\d+)-(\d*)") {
+                $start = [int64]$Matches[1]
+                $end = $fileSize - 1
+                if ($Matches[2] -ne "") {
+                    $end = [int64]$Matches[2]
+                }
+                if ($start -lt 0) { $start = 0 }
+                if ($end -ge $fileSize) { $end = $fileSize - 1 }
+
+                if ($start -le $end) {
+                    $chunkSize = $end - $start + 1
+                    $response.StatusCode = 206
+                    $response.Headers.Add("Content-Range", "bytes $start-$end/$fileSize")
+                    $response.Headers.Add("Accept-Ranges", "bytes")
+                    $response.ContentLength64 = $chunkSize
+
+                    $stream = [System.IO.File]::OpenRead($localPath)
+                    try {
+                        [void]$stream.Seek($start, [System.IO.SeekOrigin]::Begin)
+                        $buffer = New-Object byte[] $chunkSize
+                        $bytesRead = $stream.Read($buffer, 0, $chunkSize)
+                        $response.OutputStream.Write($buffer, 0, $bytesRead)
+                    } finally {
+                        $stream.Close()
+                    }
+                } else {
+                    $response.StatusCode = 416
+                    $response.Headers.Add("Content-Range", "bytes */$fileSize")
+                }
+            } else {
+                $bytes = [System.IO.File]::ReadAllBytes($localPath)
+                $response.ContentLength64 = $bytes.Length
+                $response.OutputStream.Write($bytes, 0, $bytes.Length)
+            }
         } else {
             $response.StatusCode = 404
             $buffer = [System.Text.Encoding]::UTF8.GetBytes("<h1>404 Not Found</h1>")
