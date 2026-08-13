@@ -4711,6 +4711,17 @@
             document.body.removeChild(link);
         }
 
+        function downloadLiveExcel() {
+            const googleSheetId = "1FQXzSzzRzuX3c0pwsVQzrjEJ8ri64OWaCzq4ZYRVq60";
+            const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/export?format=xlsx`;
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function exportHistoryToCSV() {
             if (adminLogsData.length === 0) {
                 alert("No history data to export.");
@@ -5576,9 +5587,19 @@
                             <p class="text-xs text-slate-500 font-medium">Logged user login events with timestamp.
                                 Newest logins appear first.</p>
                         </div>
-                        <div
-                            class="text-[11px] text-slate-500 font-bold bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 self-start sm:self-center">
-                            📅 Data retained for 30 days
+                        <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                            <button onclick="downloadLiveExcel()"
+                                class="px-3 py-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer">
+                                🟢 Live Excel (.xlsx)
+                            </button>
+                            <button onclick="exportHistoryToCSV()"
+                                class="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer">
+                                📥 Export (CSV)
+                            </button>
+                            <div
+                                class="text-[11px] text-slate-500 font-bold bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                                📅 Retained: 30 days
+                            </div>
                         </div>
                     </div>
 
@@ -5699,13 +5720,17 @@
                                 time spent, and last session duration per user.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="downloadLiveExcel()"
+                                class="px-4 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer">
+                                🟢 Download Live Excel (.xlsx)
+                            </button>
                             <button onclick="exportHistoryToCSV()"
                                 class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer">
-                                📥 Export History (Excel CSV)
+                                📥 Export History (CSV)
                             </button>
                             <button onclick="exportMetricsToCSV()"
                                 class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer">
-                                📊 Export Metrics (Excel CSV)
+                                📊 Export Metrics (CSV)
                             </button>
                         </div>
                     </div>

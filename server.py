@@ -309,8 +309,40 @@ if __name__ == "__main__":
     # Automatically open in browser
     webbrowser.open(f"http://localhost:{PORT}/index.html")
     
+    # Start background scheduler for daily export after 11:00 PM
+    def auto_export_scheduler():
+        import datetime
+        import subprocess
+        import threading
+        
+        last_export_date = ""
+        while True:
+            # Check every 60 seconds
+            time.sleep(60)
+            try:
+                # Get current time in IST (UTC+5:30)
+                now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
+                date_str = now.strftime('%Y-%m-%d')
+                hour = now.hour
+                minute = now.minute
+                
+                # Check if it is after 11:00 PM (23:05) and we haven't exported today
+                if hour == 23 and minute >= 5 and last_export_date != date_str:
+                    last_export_date = date_str
+                    print(f"[Scheduler] Auto-exporting daily logs for {date_str}...")
+                    
+                    script_path = os.path.join(DIRECTORY, 'export_daily.ps1')
+                    if os.path.exists(script_path):
+                        subprocess.Popen(['powershell.exe', '-ExecutionPolicy', 'Bypass', '-File', script_path], shell=True)
+            except Exception as scheduler_err:
+                print(f"[Scheduler] Error in auto-export task: {scheduler_err}")
+
+    scheduler_thread = threading.Thread(target=auto_export_scheduler, daemon=True)
+    scheduler_thread.start()
+    
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("\n🛑 Server stopped.")
+

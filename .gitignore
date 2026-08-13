@@ -7,3 +7,7 @@ Thumbs.db
 documents/login_history.json
 documents/login_history.csv
 documents/login_metrics.csv
+documents/backups/
+documents/exports/
+documents/login_history_live.xlsx
+temp_cloud.json

@@ -323,6 +323,32 @@ function Sync-CloudLogs {
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add($prefix)
 
+# Background Daily Export Scheduler (Checks every 60 seconds)
+$Global:LastExportDate = ""
+$timer = New-Object System.Timers.Timer
+$timer.Interval = 60000
+$timer.AutoReset = $true
+
+$null = Register-ObjectEvent -InputObject $timer -EventName Elapsed -Action {
+    $now = Get-Date
+    $hour = $now.Hour
+    $minute = $now.Minute
+    $dateStr = $now.ToString("yyyy-MM-dd")
+    
+    if ($hour -eq 23 -and $minute -ge 5 -and $Global:LastExportDate -ne $dateStr) {
+        $Global:LastExportDate = $dateStr
+        Write-Host "[Scheduler] Auto-exporting daily logs for $dateStr..." -ForegroundColor Green
+        
+        $root = $EventSubscriber.MessageData
+        $exportScript = Join-Path $root "export_daily.ps1"
+        if (Test-Path $exportScript) {
+            Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File `"$exportScript`"" -WindowStyle Hidden
+        }
+    }
+} -MessageData $PSScriptRoot
+
+$timer.Start()
+
 try {
     $listener.Start()
     Write-Host "==================================================" -ForegroundColor Green
@@ -540,5 +566,9 @@ try {
         $response.Close()
     }
 } finally {
+    if ($null -ne $timer) {
+        $timer.Stop()
+        $timer.Dispose()
+    }
     $listener.Stop()
 }

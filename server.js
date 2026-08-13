@@ -340,3 +340,51 @@ server.listen(PORT, () => {
     const startCmd = process.platform === 'win32' ? 'start' : process.platform === 'darwin' ? 'open' : 'xdg-open';
     exec(`${startCmd} ${url}`);
 });
+
+// Background Auto-Export Task (Runs daily after 11:00 PM)
+let lastExportDate = '';
+setInterval(() => {
+    try {
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Kolkata',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        const parts = formatter.formatToParts(now);
+        const partMap = {};
+        parts.forEach(p => partMap[p.type] = p.value);
+        
+        const hour = parseInt(partMap.hour, 10);
+        const minute = parseInt(partMap.minute, 10);
+        
+        // Format current IST date (YYYY-MM-DD)
+        const dateParts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(now);
+        const dateMap = {};
+        dateParts.forEach(p => dateMap[p.type] = p.value);
+        const dateStr = `${dateMap.year}-${dateMap.month}-${dateMap.day}`;
+        
+        if (hour === 23 && minute >= 5 && lastExportDate !== dateStr) {
+            lastExportDate = dateStr;
+            console.log(`[Scheduler] Auto-exporting daily logs for ${dateStr}...`);
+            
+            const scriptPath = path.join(ROOT, 'export_daily.ps1');
+            exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, (err, stdout, stderr) => {
+                if (err) {
+                    console.error('[Scheduler] Auto-export failed:', err);
+                } else {
+                    console.log('[Scheduler] Auto-export completed successfully:\n', stdout);
+                }
+            });
+        }
+    } catch (schedulerErr) {
+        console.error('[Scheduler] Error in auto-export task:', schedulerErr);
+    }
+}, 60000); // Check every 60 seconds
+
