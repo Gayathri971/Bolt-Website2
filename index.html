@@ -4431,23 +4431,8 @@
         }
 
         async function fetchHistoryFromAPI() {
-            if (isLocalAPIAvailable) {
-                try {
-                    const response = await fetch('/api/login-history');
-                    if (response.ok) {
-                        const logs = await response.json();
-                        if (Array.isArray(logs)) {
-                            return logs;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Error fetching login history from API:', e);
-                }
-            }
-
-            // Try fetching from Cloud Database if local API is not running or if we are on Vercel
             try {
-                const response = await fetch(CLOUD_DB_URL);
+                const response = await fetch('/api/login-history');
                 if (response.ok) {
                     const logs = await response.json();
                     if (Array.isArray(logs)) {
@@ -4455,7 +4440,7 @@
                     }
                 }
             } catch (e) {
-                console.warn('Error fetching login history from cloud DB:', e);
+                console.warn('Error fetching login history from API:', e);
             }
 
             // Fallback to localStorage if completely offline
@@ -4477,55 +4462,33 @@
 
         async function saveLoginEventToAPI(newRecord) {
             try {
-                if (isLocalAPIAvailable) {
-                    await fetch('/api/login-history', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newRecord)
-                    });
-                }
-
-                // Always sync/upload to the Cloud Database too if we have internet connection
-                try {
-                    const response = await fetch(CLOUD_DB_URL);
-                    if (response.ok) {
-                        let cloudLogs = await response.json();
-                        if (!Array.isArray(cloudLogs)) cloudLogs = [];
-
-                        const idx = cloudLogs.findIndex(log => log.sessionId === newRecord.sessionId && log.sessionId);
-                        if (idx !== -1) {
-                            cloudLogs[idx] = { ...cloudLogs[idx], ...newRecord };
-                        } else {
-                            cloudLogs.unshift(newRecord);
-                        }
-
-                        await fetch(CLOUD_DB_URL, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(cloudLogs)
-                        });
-                    }
-                } catch (cloudErr) {
-                    console.warn('Could not save login event to cloud DB, saving locally:', cloudErr);
-
-                    // Save to local storage as fallback
-                    let localLogs = [];
-                    try {
-                        let stored = safeStorage.getItem('nos_login_history');
-                        localLogs = stored ? JSON.parse(stored) : [];
-                    } catch (e) { }
-                    if (!Array.isArray(localLogs)) localLogs = [];
-
-                    const idx = localLogs.findIndex(log => log.sessionId === newRecord.sessionId && log.sessionId);
-                    if (idx !== -1) {
-                        localLogs[idx] = { ...localLogs[idx], ...newRecord };
-                    } else {
-                        localLogs.unshift(newRecord);
-                    }
-                    safeStorage.setItem('nos_login_history', JSON.stringify(localLogs));
+                const response = await fetch('/api/login-history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newRecord)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save to API');
                 }
             } catch (e) {
-                console.warn('Error saving login event:', e);
+                console.warn('Error saving login event to API, saving locally:', e);
+
+                // Save to local storage as fallback
+                let localLogs = [];
+                try {
+                    let stored = safeStorage.getItem('nos_login_history');
+                    localLogs = stored ? JSON.parse(stored) : [];
+                } catch (err) {}
+                if (!Array.isArray(localLogs)) localLogs = [];
+
+                const idx = localLogs.findIndex(log => log.sessionId === newRecord.sessionId && log.sessionId);
+                if (idx !== -1) {
+                    localLogs[idx] = { ...localLogs[idx], ...newRecord };
+                } else {
+                    localLogs.unshift(newRecord);
+                }
+                safeStorage.setItem('nos_login_history', JSON.stringify(localLogs));
             }
         }
 

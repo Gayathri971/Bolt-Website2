@@ -209,6 +209,117 @@ function Write-CsvLogs ($logs) {
 }
 
 
+function Sync-CloudLogs {
+    param(
+        [string]$dbPath
+    )
+    $cloudUrl = "https://jsonbin-zeta.vercel.app/api/bins/k3gwO0bXZP"
+    
+    try {
+        # 1. Fetch Cloud Logs
+        $cloudLogs = Invoke-RestMethod -Uri $cloudUrl -Method Get -TimeoutSec 10
+        if (-not ($cloudLogs -is [Array])) {
+            $cloudLogs = @()
+        }
+
+        # 2. Fetch Local Logs
+        $localLogs = @()
+        if (Test-Path $dbPath) {
+            $content = Get-Content -Raw $dbPath -ErrorAction SilentlyContinue
+            if ($content) {
+                $localLogs = $content | ConvertFrom-Json
+            }
+        }
+        if (-not ($localLogs -is [Array])) {
+            $localLogs = @()
+        }
+
+        # 3. Merge them
+        # Map local logs by sessionId for fast lookup
+        $localMap = @{}
+        foreach ($log in $localLogs) {
+            if ($log.sessionId) {
+                $localMap[$log.sessionId] = $log
+            }
+        }
+
+        # Map cloud logs by sessionId
+        $cloudMap = @{}
+        foreach ($log in $cloudLogs) {
+            if ($log.sessionId) {
+                $cloudMap[$log.sessionId] = $log
+            }
+        }
+
+        $mergedLogs = @()
+        $needCloudUpdate = $false
+        $needLocalUpdate = $false
+
+        # Process all logs from Cloud first
+        foreach ($cLog in $cloudLogs) {
+            if (-not $cLog.sessionId) {
+                $mergedLogs += $cLog
+                continue
+            }
+            $lLog = $localMap[$cLog.sessionId]
+            if (-not $lLog) {
+                $mergedLogs += $cLog
+                $needLocalUpdate = $true
+            } else {
+                # Session exists on both. Check if one has logout details while the other doesn't
+                $cLoggedOut = -not [string]::IsNullOrEmpty($cLog.logoutTime)
+                $lLoggedOut = -not [string]::IsNullOrEmpty($lLog.logoutTime)
+                
+                if ($cLoggedOut -and -not $lLoggedOut) {
+                    $mergedLogs += $cLog
+                    $needLocalUpdate = $true
+                } elseif ($lLoggedOut -and -not $cLoggedOut) {
+                    $mergedLogs += $lLog
+                    $needCloudUpdate = $true
+                } else {
+                    $mergedLogs += $lLog
+                }
+            }
+        }
+
+        # Add any local logs missing from Cloud
+        foreach ($lLog in $localLogs) {
+            if (-not $lLog.sessionId) { continue }
+            $cLog = $cloudMap[$lLog.sessionId]
+            if (-not $cLog) {
+                $mergedLogs = @($lLog) + $mergedLogs
+                $needCloudUpdate = $true
+            }
+        }
+
+        # Save updates
+        if ($needLocalUpdate -or $needCloudUpdate) {
+            $dir = [System.IO.Path]::GetDirectoryName($dbPath)
+            if (-not (Test-Path $dir)) { [System.IO.Directory]::CreateDirectory($dir) | Out-Null }
+            
+            $json = $mergedLogs | ConvertTo-Json -Depth 5
+            [System.IO.File]::WriteAllText($dbPath, $json)
+            Write-CsvLogs $mergedLogs
+
+            if ($needCloudUpdate) {
+                $headers = @{ "Content-Type" = "application/json" }
+                $putBody = $mergedLogs | ConvertTo-Json -Depth 5
+                $null = Invoke-RestMethod -Uri $cloudUrl -Method Put -Body $putBody -Headers $headers -TimeoutSec 10
+            }
+        }
+        return $mergedLogs
+    } catch {
+        Write-Host "Sync-CloudLogs Error: $_"
+        # Fallback to local logs if sync fails
+        $localLogs = @()
+        if (Test-Path $dbPath) {
+            $content = Get-Content -Raw $dbPath -ErrorAction SilentlyContinue
+            if ($content) { $localLogs = $content | ConvertFrom-Json }
+        }
+        return $localLogs
+    }
+}
+
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add($prefix)
 
@@ -244,16 +355,7 @@ try {
             }
             
             if ($request.HttpMethod -eq "GET") {
-                $logs = @()
-                if (Test-Path $dbPath) {
-                    try {
-                        $content = Get-Content -Raw $dbPath -ErrorAction SilentlyContinue
-                        if ($content) {
-                            $logs = $content | ConvertFrom-Json
-                        }
-                    } catch {}
-                }
-                
+                $logs = Sync-CloudLogs $dbPath
                 $json = $logs | ConvertTo-Json -Depth 5 -Compress
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes($json)
                 $response.ContentLength64 = $buffer.Length
@@ -339,6 +441,16 @@ try {
                 $json = $updatedLogs | ConvertTo-Json -Depth 5
                 [System.IO.File]::WriteAllText($dbPath, $json)
                 Write-CsvLogs $updatedLogs
+                
+                # Sync with Cloud Database
+                try {
+                    $headers = @{ "Content-Type" = "application/json" }
+                    $cloudUrl = "https://jsonbin-zeta.vercel.app/api/bins/k3gwO0bXZP"
+                    $putBody = $updatedLogs | ConvertTo-Json -Depth 5
+                    $null = Invoke-RestMethod -Uri $cloudUrl -Method Put -Body $putBody -Headers $headers -TimeoutSec 10
+                } catch {
+                    Write-Host "Failed to sync local POST to cloud: $_"
+                }
                 
                 $respJson = '{"success":true}'
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes($respJson)
