@@ -341,7 +341,7 @@ try {
         if ([string]::IsNullOrWhiteSpace($relativePath)) { $relativePath = "index.html" }
 
         # Check for API
-        if ($relativePath.StartsWith("api/login-history")) {
+        if ($relativePath.StartsWith("api/login-history") -or $relativePath.StartsWith("api/log-login") -or $relativePath.StartsWith("api/log-logout")) {
             $dbPath = Join-Path $PSScriptRoot "documents\login_history.json"
             $response.Headers.Add("Access-Control-Allow-Origin", "*")
             $response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -481,6 +481,7 @@ try {
 
             $rangeHeader = $request.Headers["Range"]
             $fileSize = (Get-Item $localPath).Length
+            $isHead = $request.HttpMethod -eq "HEAD"
 
             if ($null -ne $rangeHeader -and $rangeHeader -match "bytes=(\d+)-(\d*)") {
                 $start = [int64]$Matches[1]
@@ -498,28 +499,43 @@ try {
                     $response.Headers.Add("Accept-Ranges", "bytes")
                     $response.ContentLength64 = $chunkSize
 
-                    $stream = [System.IO.File]::OpenRead($localPath)
-                    try {
-                        [void]$stream.Seek($start, [System.IO.SeekOrigin]::Begin)
-                        $buffer = New-Object byte[] $chunkSize
-                        $bytesRead = $stream.Read($buffer, 0, $chunkSize)
-                        $response.OutputStream.Write($buffer, 0, $bytesRead)
-                    } finally {
-                        $stream.Close()
+                    if (-not $isHead) {
+                        $stream = [System.IO.File]::OpenRead($localPath)
+                        try {
+                            [void]$stream.Seek($start, [System.IO.SeekOrigin]::Begin)
+                            $bufferSize = 65536
+                            $buffer = New-Object byte[] $bufferSize
+                            $bytesRemaining = $chunkSize
+                            while ($bytesRemaining -gt 0) {
+                                $bytesToRead = [Math]::Min($bytesRemaining, $bufferSize)
+                                $bytesRead = $stream.Read($buffer, 0, $bytesToRead)
+                                if ($bytesRead -le 0) { break }
+                                $response.OutputStream.Write($buffer, 0, $bytesRead)
+                                $bytesRemaining -= $bytesRead
+                            }
+                        } finally {
+                            $stream.Close()
+                        }
                     }
                 } else {
                     $response.StatusCode = 416
                     $response.Headers.Add("Content-Range", "bytes */$fileSize")
                 }
             } else {
-                $bytes = [System.IO.File]::ReadAllBytes($localPath)
-                $response.ContentLength64 = $bytes.Length
-                $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                $response.ContentLength64 = $fileSize
+                if (-not $isHead) {
+                    $bytes = [System.IO.File]::ReadAllBytes($localPath)
+                    $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                }
             }
         } else {
             $response.StatusCode = 404
             $buffer = [System.Text.Encoding]::UTF8.GetBytes("<h1>404 Not Found</h1>")
-            $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            if ($request.HttpMethod -ne "HEAD") {
+                $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            } else {
+                $response.ContentLength64 = $buffer.Length
+            }
         }
         $response.Close()
     }

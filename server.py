@@ -177,7 +177,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
 
     def do_GET(self):
-        if self.path.startswith('/api/login-history'):
+        if self.path.startswith('/api/login-history') or self.path.startswith('/api/log-login') or self.path.startswith('/api/log-logout'):
             db_path = os.path.join(DIRECTORY, 'documents', 'login_history.json')
             logs = []
             if os.path.exists(db_path):
@@ -223,18 +223,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     self.send_header('Access-Control-Allow-Origin', '*')
                     self.end_headers()
 
-                    try:
-                        with open(filepath, 'rb') as f:
-                            f.seek(start)
-                            self.wfile.write(f.read(chunk_size))
-                    except Exception as e:
-                        print(f"Error serving range request: {e}")
+                    if self.command != 'HEAD':
+                        try:
+                            with open(filepath, 'rb') as f:
+                                f.seek(start)
+                                self.wfile.write(f.read(chunk_size))
+                        except Exception as e:
+                            print(f"Error serving range request: {e}")
                     return
 
         super().do_GET()
 
     def do_POST(self):
-        if self.path.startswith('/api/login-history'):
+        if self.path.startswith('/api/login-history') or self.path.startswith('/api/log-login') or self.path.startswith('/api/log-logout'):
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length).decode('utf-8')
             try:

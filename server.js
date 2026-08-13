@@ -184,7 +184,7 @@ function writeCSV(logs) {
 
 const server = http.createServer((req, res) => {
     // Handle Login History API
-    if (req.url.startsWith('/api/login-history')) {
+    if (req.url.startsWith('/api/login-history') || req.url.startsWith('/api/log-login') || req.url.startsWith('/api/log-logout')) {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -301,7 +301,6 @@ const server = http.createServer((req, res) => {
             }
 
             const chunksize = (end - start) + 1;
-            const file = fs.createReadStream(filePath, { start, end });
             const head = {
                 'Content-Range': `bytes ${start}-${end}/${stats.size}`,
                 'Accept-Ranges': 'bytes',
@@ -310,6 +309,10 @@ const server = http.createServer((req, res) => {
                 'Access-Control-Allow-Origin': '*'
             };
             res.writeHead(206, head);
+            if (req.method === 'HEAD') {
+                return res.end();
+            }
+            const file = fs.createReadStream(filePath, { start, end });
             file.pipe(res);
         } else {
             const head = {
@@ -318,6 +321,9 @@ const server = http.createServer((req, res) => {
                 'Access-Control-Allow-Origin': '*'
             };
             res.writeHead(200, head);
+            if (req.method === 'HEAD') {
+                return res.end();
+            }
             fs.createReadStream(filePath).pipe(res);
         }
     });

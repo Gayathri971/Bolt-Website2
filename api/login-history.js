@@ -1,3 +1,5 @@
+import { logLoginToSheet, logLogoutToSheet } from './_sheets.js';
+
 const CLOUD_DB_URL = 'https://jsonbin-zeta.vercel.app/api/bins/k3gwO0bXZP';
 
 export default async function handler(req, res) {
@@ -79,6 +81,24 @@ export default async function handler(req, res) {
 
             if (!saveResponse.ok) {
                 return res.status(saveResponse.status).json({ error: 'Failed to save to cloud database' });
+            }
+
+            // Direct Google Sheets Logging
+            try {
+                const isLogout = newRecord.logoutTime || newRecord.logoutTimestamp;
+                if (isLogout) {
+                    console.log(`Directly logging logout to Google Sheets for Session: ${newRecord.sessionId}`);
+                    await logLogoutToSheet({ sessionId: newRecord.sessionId });
+                } else {
+                    console.log(`Directly logging login to Google Sheets for: ${newRecord.name || newRecord.username}`);
+                    await logLoginToSheet({
+                        name: newRecord.name || newRecord.username,
+                        sessionId: newRecord.sessionId
+                    });
+                }
+            } catch (sheetErr) {
+                console.error('Failed to log to Google Sheets in login-history handler:', sheetErr);
+                // Google Sheets error should not block user experience
             }
 
             // Generate JSON Log in Vercel stdout for pipeline retrieval
