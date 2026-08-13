@@ -152,14 +152,7 @@
             <div class="text-center space-y-3">
                 <div
                     class="inline-flex items-center justify-center bg-white/95 rounded-2xl p-2 shadow-xl shadow-indigo-500/10 border border-slate-700/50">
-                    <svg class="w-8 h-8" viewBox="0 0 130 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M 25 65 L 45 25 L 60 55" stroke="#0020c2" stroke-width="10" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        <path d="M 70 35 L 85 65 L 105 25" stroke="#ff1a1a" stroke-width="10" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        <circle cx="10" cy="65" r="4.5" stroke="#ff1a1a" stroke-width="3" fill="#ffffff" />
-                        <circle cx="120" cy="25" r="4.5" stroke="#0020c2" stroke-width="3" fill="#ffffff" />
-                    </svg>
+                    <img src="images/agivant-icon.png" alt="Agivant Logo" class="w-8 h-8 object-contain" />
                 </div>
                 <div>
                     <h1 class="text-3xl font-black tracking-tight text-white">AGIVANT BOLT</h1>
@@ -208,7 +201,8 @@
                     <img src="images/agivant-logo.png" alt="Agivant Logo" class="h-9 object-contain" />
                     <div class="flex flex-col justify-center">
                         <span class="text-2xl font-black tracking-tight text-indigo-600 leading-none">BOLT</span>
-                        <span class="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-0.5">AI-Native Delivery OS</span>
+                        <span class="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-0.5">AI-Native
+                            Delivery OS</span>
                     </div>
                 </div>
 
@@ -350,18 +344,7 @@
                                             <div
                                                 class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-tr from-indigo-950/80 to-purple-950/80 border border-indigo-400/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(168,85,247,0.5)]">
                                                 <!-- Agivant Logo Icon -->
-                                                <svg class="w-16 h-16 md:w-20 md:h-20 filter drop-shadow-[0_0_16px_rgba(168,85,247,0.9)] animate-pulse"
-                                                    viewBox="0 0 130 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M 25 65 L 45 25 L 60 55" stroke="#3b82f6" stroke-width="10"
-                                                        stroke-linecap="round" stroke-linejoin="round" />
-                                                    <path d="M 70 35 L 85 65 L 105 25" stroke="#ef4444"
-                                                        stroke-width="10" stroke-linecap="round"
-                                                        stroke-linejoin="round" />
-                                                    <circle cx="10" cy="65" r="4.5" stroke="#ef4444" stroke-width="3"
-                                                        fill="#02071a" />
-                                                    <circle cx="120" cy="25" r="4.5" stroke="#3b82f6" stroke-width="3"
-                                                        fill="#02071a" />
-                                                </svg>
+                                                <img src="images/agivant-icon.png" alt="Agivant Logo" class="w-16 h-16 md:w-20 md:h-20 object-contain filter drop-shadow-[0_0_16px_rgba(168,85,247,0.9)] animate-pulse" />
                                             </div>
                                         </div>
                                     </div>
@@ -630,17 +613,7 @@
                                     <div class="absolute inset-0 bg-indigo-500/20 rounded-full blur-xl"></div>
                                     <div
                                         class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 border-2 border-indigo-300 shadow-xl flex flex-col items-center justify-center relative z-10">
-                                        <svg class="w-6.5 h-6.5" viewBox="0 0 130 90" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M 25 65 L 45 25 L 60 55" stroke="#0020c2" stroke-width="10"
-                                                stroke-linecap="round" stroke-linejoin="round" />
-                                            <path d="M 70 35 L 85 65 L 105 25" stroke="#ff1a1a" stroke-width="10"
-                                                stroke-linecap="round" stroke-linejoin="round" />
-                                            <circle cx="10" cy="65" r="4.5" stroke="#ff1a1a" stroke-width="3"
-                                                fill="#ffffff" />
-                                            <circle cx="120" cy="25" r="4.5" stroke="#0020c2" stroke-width="3"
-                                                fill="#ffffff" />
-                                        </svg>
+                                        <img src="images/agivant-icon.png" alt="Agivant Logo" class="w-6.5 h-6.5 object-contain" />
                                         <span
                                             class="text-[9px] font-black text-indigo-900 tracking-wider leading-none text-center">AGIVANT<br>BOLT</span>
                                     </div>
@@ -4455,7 +4428,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newRecord)
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to save to API');
                 }
@@ -4467,7 +4440,7 @@
                 try {
                     let stored = safeStorage.getItem('nos_login_history');
                     localLogs = stored ? JSON.parse(stored) : [];
-                } catch (err) {}
+                } catch (err) { }
                 if (!Array.isArray(localLogs)) localLogs = [];
 
                 const idx = localLogs.findIndex(log => log.sessionId === newRecord.sessionId && log.sessionId);
