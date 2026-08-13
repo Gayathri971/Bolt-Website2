@@ -2162,6 +2162,12 @@
                 window.localStorage.setItem('__storage_test__', '1');
                 window.localStorage.removeItem('__storage_test__');
                 safeStorage = window.localStorage;
+                
+                // One-time purge of old development/mock login history to start fresh from today
+                if (!safeStorage.getItem('nos_history_cleared_v2')) {
+                    safeStorage.removeItem('nos_login_history');
+                    safeStorage.setItem('nos_history_cleared_v2', 'true');
+                }
             }
         } catch (e) {
             console.warn('localStorage is blocked in this environment. Using in-memory fallback storage.');
@@ -4182,33 +4188,7 @@
 
         const CLOUD_DB_URL = 'https://jsonbin-zeta.vercel.app/api/bins/k3gwO0bXZP';
 
-        // Pre-populated default mock login history when working offline
-        //const DEFAULT_MOCK_HISTORY = [
-        //{ "logoutTime": "03:03:11 PM", "logoutTimestamp": 1787736791039, "ipAddress": "45.112.10.45", "name": "Yash", "username": "yash.a", "device": "Mobile", "duration": 3501, "loginTime": "02:04:50 PM", "browser": "Chrome", "sessionId": "s-9", "loginDate": "Aug 26, 2026", "status": "Success", "os": "Windows", "timestamp": 1787733290039 },
-        // { "sessionId": "s-10", "username": "anjali.i", "status": "Failed", "device": "Desktop", "loginDate": "Aug 28, 2026", "os": "Windows", "browser": "Chrome", "name": "Anjali", "loginTime": "02:53:59 PM", "logoutTime": "", "ipAddress": "103.220.12.89", "timestamp": 1787909039039 },
-        // { "logoutTime": "10:39:56 AM", "logoutTimestamp": 1787548196039, "ipAddress": "104.132.16.119", "name": "Roopkumar", "username": "roopkumar.k", "device": "Desktop", "duration": 4805, "loginTime": "09:19:51 AM", "browser": "Safari", "sessionId": "s-8", "loginDate": "Aug 24, 2026", "status": "Success", "os": "macOS", "timestamp": 1787543391039 },
-        //{ "logoutTime": "10:58:08 AM", "logoutTimestamp": 1787376488039, "ipAddress": "14.96.136.34", "name": "Kalyan", "username": "kalyan.c", "device": "Mobile", "duration": 3305, "loginTime": "10:03:03 AM", "browser": "Edge", "sessionId": "s-7", "loginDate": "Aug 22, 2026", "status": "Success", "os": "Windows", "timestamp": 1787373183039 },
-        // { "logoutTime": "04:17:35 PM", "logoutTimestamp": 1787222855039, "ipAddress": "202.160.160.131", "name": "Admin", "username": "admin", "device": "Desktop", "duration": 2506, "loginTime": "03:35:49 PM", "browser": "Edge", "sessionId": "s-6", "loginDate": "Aug 20, 2026", "status": "Success", "os": "Windows", "timestamp": 1787220349039 },
-        //  { "logoutTime": "10:58:08 AM", "logoutTimestamp": 1787376488039, "ipAddress": "14.96.136.34", "name": "Kalyan", "username": "kalyan.c", "device": "Mobile", "duration": 3305, "loginTime": "10:03:03 AM", "browser": "Edge", "sessionId": "s-7", "loginDate": "Aug 22, 2026", "status": "Success", "os": "Windows", "timestamp": 1787373183039 },
-        //  { "logoutTime": "10:58:08 AM", "logoutTimestamp": 1787376488039, "ipAddress": "14.96.136.34", "name": "Kalyan", "username": "kalyan.c", "device": "Mobile", "duration": 3305, "loginTime": "10:03:03 AM", "browser": "Edge", "sessionId": "s-7", "loginDate": "Aug 22, 2026", "status": "Success", "os": "Windows", "timestamp": 1787373183039 },
-        //{ "logoutTime": "10:36:40 AM", "logoutTimestamp": 1788066400039, "ipAddress": "202.160.160.131", "name": "Admin", "username": "admin", "device": "Mobile", "duration": 2869, "loginTime": "09:48:51 AM", "browser": "Edge", "sessionId": "s-11", "loginDate": "Aug 30, 2026", "status": "Success", "os": "Windows", "timestamp": 1788063531039 },
-        // {"logoutTime": "11:52:33 AM", "logoutTimestamp": 1788848553049, "ipAddress": "103.220.12.89", "name": "Anjali", "username": "anjali.i", "device": "Mobile", "duration": 3269, "loginTime": "10:58:04 AM", "browser": "Chrome", "sessionId": "s-15", "loginDate": "Sep 8, 2026", "status": "Success", "os": "Windows", "timestamp": 1788845284049 },
-        //{ "ogoutTime": "11:06:47 AM", "logoutTimestamp": 1789018607049, "ipAddress": "202.160.160.131", "name": "Admin", "username": "admin", "device": "Desktop", "duration": 5317, "loginTime": "09:38:10 AM", "browser": "Edge", "sessionId": "s-16", "loginDate": "Sep 10, 2026", "status": "Success", "os": "Windows", "timestamp": 1789013290049 },
-        //        { "logoutTime": "03:54:11 PM", "logoutTimestamp": 1788690251039, "ipAddress": "45.112.10.45", "name": "Yash", "username": "yash.a", "device": "Desktop", "duration": 3502, "loginTime": "02:55:49 PM", "browser": "Chrome", "sessionId": "s-14", "loginDate": "Sep 6, 2026", "status": "Success", "os": "Windows", "timestamp": 1788686749039 },
-        //      { "logoutTime": "03:05:37 PM", "logoutTimestamp": 1788341737039, "ipAddress": "14.96.136.34", "name": "Kalyan", "username": "kalyan.c", "device": "Desktop", "duration": 2535, "loginTime": "02:23:22 PM", "browser": "Edge", "sessionId": "s-12", "loginDate": "Sep 2, 2026", "status": "Success", "os": "Windows", "timestamp": 1788339202039 },
-        //    { "logoutTime": "01:51:07 PM", "logoutTimestamp": 1788510067039, "ipAddress": "104.132.16.119", "name": "Roopkumar", "username": "roopkumar.k", "device": "Mobile", "duration": 4778, "loginTime": "12:31:29 PM", "browser": "Safari", "sessionId": "s-13", "loginDate": "Sep 4, 2026", "status": "Success", "os": "macOS", "timestamp": 1788505289039 },
-        //  { "sessionId": "c9faf506", "timestamp": 1786421165168, "username": "roopkumar.k", "device": "Desktop", "logoutTime": "Aug 11, 09:42 AM", "duration": 378, "name": "Roopkumar", "loginDate": "Aug 11, 2026", "browser": "Edge", "status": "Success", "os": "macOS", "logoutTimestamp": 1786421543284, "ipAddress": "104.132.16.119", "loginTime": "09:36:05 AM" },
-        //{ "sessionId": "08fba021", "timestamp": 1786421139740, "username": "roopkumar.k", "device": "Desktop", "logoutTime": "Aug 11, 09:35 AM", "duration": 6, "name": "Roopkumar", "loginDate": "Aug 11, 2026", "browser": "Chrome", "status": "Success", "os": "Windows", "logoutTimestamp": 1786421146148, "ipAddress": "104.132.16.119", "loginTime": "09:35:39 AM" },
-        //   { "sessionId": "ff145ad7", "timestamp": 1786421214994, "username": "kalyan.c", "device": "Desktop", "logoutTime": "Aug 11, 09:44 AM", "duration": 472, "name": "Kalyan", "loginDate": "Aug 11, 2026", "browser": "Edge", "status": "Success", "os": "Windows", "logoutTimestamp": 1786421687469, "ipAddress": "14.96.136.34", "loginTime": "09:36:54 AM" },
-        //  { "sessionId": "e7201ad9", "username": "admin", "status": "Success", "device": "Desktop", "loginDate": "Aug 11, 2026", "os": "Windows", "browser": "Edge", "name": "Administrator", "loginTime": "10:18:10 AM", "logoutTime": "", "ipAddress": "202.160.160.131", "timestamp": 1786423690190 },
-        //   { "sessionId": "c0119634", "timestamp": 1786422468767, "username": "kalyan.c", "device": "Desktop", "logoutTime": "Aug 11, 09:58 AM", "duration": 32, "name": "Kalyan", "loginDate": "Aug 11, 2026", "browser": "Edge", "status": "Success", "os": "Windows", "logoutTimestamp": 1786422501463, "ipAddress": "14.96.136.34", "loginTime": "09:57:48 AM" },
-        //   { "sessionId": "", "username": "roop.k", "status": "Failed", "device": "Desktop", "loginDate": "Aug 11, 2026", "os": "macOS", "browser": "Edge", "name": "roop.k", "loginTime": "09:33:08 AM", "logoutTime": "", "ipAddress": "104.132.16.119", "timestamp": 1786420988789 },
-        //  { "logoutTime": "12:23:08 PM", "logoutTimestamp": 1786863188039, "ipAddress": "45.112.10.45", "name": "Yash", "username": "yash.a", "device": "Desktop", "duration": 4687, "loginTime": "11:05:01 AM", "browser": "Chrome", "sessionId": "s-4", "loginDate": "Aug 16, 2026", "status": "Success", "os": "Windows", "timestamp": 1786858501039 },
-        //  { "logoutTime": "04:22:08 PM", "logoutTimestamp": 1787050328039, "ipAddress": "103.220.12.89", "name": "Anjali", "username": "anjali.i", "device": "Mobile", "duration": 1242, "loginTime": "04:01:26 PM", "browser": "Chrome", "sessionId": "s-5", "loginDate": "Aug 18, 2026", "status": "Success", "os": "Windows", "timestamp": 1787049086039 },
-        // { "logoutTime": "04:16:43 PM", "logoutTimestamp": 1786704403037, "ipAddress": "104.132.16.119", "name": "Roopkumar", "username": "roopkumar.k", "device": "Mobile", "duration": 607, "loginTime": "04:06:36 PM", "browser": "Safari", "sessionId": "s-3", "loginDate": "Aug 14, 2026", "status": "Success", "os": "macOS", "timestamp": 1786703796037 },
-        //  { "logoutTime": "11:33:25 AM", "logoutTimestamp": 1786341805001, "ipAddress": "202.160.160.131", "name": "Admin", "username": "admin", "device": "Mobile", "duration": 3378, "loginTime": "10:37:07 AM", "browser": "Edge", "sessionId": "s-1", "loginDate": "Aug 10, 2026", "status": "Success", "os": "Windows", "timestamp": 1786338427001 },
-        //   { "logoutTime": "04:04:16 PM", "logoutTimestamp": 1786530856037, "ipAddress": "14.96.136.34", "name": "Kalyan", "username": "kalyan.c", "device": "Desktop", "duration": 4284, "loginTime": "02:52:52 PM", "browser": "Edge", "sessionId": "s-2", "loginDate": "Aug 12, 2026", "status": "Success", "os": "Windows", "timestamp": 1786526572037 }
-        //];//
+        const DEFAULT_MOCK_HISTORY = [];
 
         let adminLogsData = [];
         let adminLogsPage = 1;
