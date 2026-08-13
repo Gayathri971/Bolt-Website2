@@ -166,7 +166,7 @@ export async function logLogoutToSheet({ sessionId }) {
     // Find row index (1-based index)
     let rowIndex = -1;
     for (let i = 0; i < sessionIds.length; i++) {
-        if (sessionIds[i][0] === sessionId) {
+        if (sessionIds[i] && sessionIds[i][0] === sessionId) {
             rowIndex = i + 1; // row index in sheet (header is row 1)
             break;
         }
