@@ -34,12 +34,40 @@ export default async function handler(req, res) {
             }
             if (!Array.isArray(cloudLogs)) cloudLogs = [];
 
+            // Helper to format date/time
+            const formatDateTime = (ts) => {
+                if (!ts) return { date: '', time: '' };
+                const date = new Date(ts);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hrs = String(date.getHours()).padStart(2, '0');
+                const mins = String(date.getMinutes()).padStart(2, '0');
+                const secs = String(date.getSeconds()).padStart(2, '0');
+                return {
+                    date: `${year}-${month}-${day}`,
+                    time: `${hrs}:${mins}:${secs}`
+                };
+            };
+
             // Update or insert
             const idx = cloudLogs.findIndex(log => log.sessionId === newRecord.sessionId);
+            let mergedRecord;
             if (idx !== -1) {
                 cloudLogs[idx] = { ...cloudLogs[idx], ...newRecord };
+                
+                // Calculate duration if we have timestamps
+                if (cloudLogs[idx].timestamp && cloudLogs[idx].logoutTimestamp) {
+                    const diffSeconds = Math.round((cloudLogs[idx].logoutTimestamp - cloudLogs[idx].timestamp) / 1000);
+                    const hrs = String(Math.floor(diffSeconds / 3600)).padStart(2, '0');
+                    const mins = String(Math.floor((diffSeconds % 3600) / 60)).padStart(2, '0');
+                    const secs = String(diffSeconds % 60).padStart(2, '0');
+                    cloudLogs[idx].duration = `${hrs}:${mins}:${secs}`;
+                }
+                mergedRecord = cloudLogs[idx];
             } else {
                 cloudLogs.unshift(newRecord);
+                mergedRecord = newRecord;
             }
 
             // Save back to cloud
@@ -52,6 +80,19 @@ export default async function handler(req, res) {
             if (!saveResponse.ok) {
                 return res.status(saveResponse.status).json({ error: 'Failed to save to cloud database' });
             }
+
+            // Generate JSON Log in Vercel stdout for pipeline retrieval
+            const loginInfo = formatDateTime(mergedRecord.timestamp);
+            const logoutInfo = formatDateTime(mergedRecord.logoutTimestamp);
+            
+            const logMessage = {
+                name: mergedRecord.name || mergedRecord.username,
+                loginDate: loginInfo.date,
+                loginTime: loginInfo.time,
+                logoutTime: logoutInfo.time,
+                duration: mergedRecord.duration || ''
+            };
+            console.log("VERCEL_LOGIN_JSON:" + JSON.stringify(logMessage));
 
             return res.status(200).json({ success: true });
         }

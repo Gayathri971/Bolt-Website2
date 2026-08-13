@@ -1,3 +1,9 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "crons": [
+    {
+      "path": "/api/sync-vercel-logs",
+      "schedule": "*/10 * * * *"
+    }
+  ]
 }
